@@ -1,5 +1,7 @@
 # SuperFrontierLiquid
 
+<p align="center"><img src="sfl.jpg" alt="SuperFrontierLiquid" width="480"></p>
+
 A personal experiment in building an exchange simulator and blockchain in Rust.
 This prototype explores order books, spot trading, perpetuals, dated futures,
 consensus, and a browser terminal using simulated assets and test funds.
