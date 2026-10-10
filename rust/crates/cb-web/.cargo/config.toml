@@ -1,0 +1,7 @@
+# `cargo test --target wasm32-unknown-unknown` needs a runner: the harness
+# produces a `.wasm` file, which the shell cannot execute. `wasm-bindgen-test-runner`
+# drives it under Node, which is enough for everything in `tests/browser.rs` —
+# none of it touches the DOM. To run the same suite inside a real browser,
+# install a driver and use `wasm-pack test --headless --chrome`.
+[target.wasm32-unknown-unknown]
+runner = "wasm-bindgen-test-runner"

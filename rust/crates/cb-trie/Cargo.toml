@@ -1,0 +1,14 @@
+[package]
+name = "cb-trie"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

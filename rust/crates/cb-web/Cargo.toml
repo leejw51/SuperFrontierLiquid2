@@ -1,0 +1,99 @@
+[package]
+name = "cb-web"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "SuperFrontierLiquid web client: a Leptos CSR application compiled to WebAssembly."
+
+# Deliberately outside the cargo workspace: this crate targets wasm32 only and
+# carries its own release profile, so it must not contend for the workspace lock.
+
+[lib]
+name = "cb_web"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cb-web"
+path = "src/main.rs"
+
+[features]
+default = []
+# Flip the default backend to the real gateway at compile time. The runtime
+# override (`?gateway=live` / `?gateway=mock`) works regardless.
+live-gateway = []
+
+[dependencies]
+leptos = { version = "0.8", features = ["csr"] }
+leptos_router = { version = "0.8" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+gloo-net = { version = "0.6", features = ["http", "websocket"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
+gloo-storage = "0.3"
+futures = "0.3"
+# Pinned to the version of `wasm-bindgen-test-runner` on the machine, because
+# the two schemas have to match exactly for `cargo test --target
+# wasm32-unknown-unknown` to run. Trunk fetches its own matching CLI, so the pin
+# costs the browser build nothing.
+wasm-bindgen = "=0.2.127"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+# `serde-str` makes every Decimal cross the wire as a decimal STRING, which is
+# exactly what docs/api-contract.md specifies. No money value is ever an f64.
+rust_decimal = { version = "1", default-features = false, features = ["std", "serde-str", "maths"] }
+thiserror = "1"
+console_error_panic_hook = "0.1"
+# Identity. docs/api-contract.md §2 makes login an EIP-191 signature over a
+# server-issued challenge, from a key derived from a BIP-39 mnemonic at
+# m/44'/60'/0'/0/{index}. The mnemonic never leaves the browser, so the whole
+# derivation has to happen here.
+bip39 = { version = "2", default-features = false, features = ["std"] }
+bip32 = { version = "0.5", default-features = false, features = ["alloc", "secp256k1"] }
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+sha3 = { version = "0.10", default-features = false }
+hex = "0.4"
+# Browser entropy for minting a new wallet. Without the `js` backend, wasm has
+# no source of randomness and mnemonic generation cannot work at all.
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "HtmlCanvasElement",
+  "CanvasRenderingContext2d",
+  "TextMetrics",
+  "Window",
+  "Document",
+  "DocumentFragment",
+  "Element",
+  "HtmlElement",
+  "HtmlInputElement",
+  "HtmlAnchorElement",
+  "CssStyleDeclaration",
+  "DomRect",
+  "DomRectReadOnly",
+  "MouseEvent",
+  "KeyboardEvent",
+  "WheelEvent",
+  "Performance",
+  "Location",
+  "Storage",
+  "Navigator",
+  "Clipboard",
+  "Blob",
+  "BlobPropertyBag",
+  "Url",
+  "ResizeObserver",
+  "ResizeObserverEntry",
+  "console",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

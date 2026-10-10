@@ -1,0 +1,42 @@
+target/
+rust/target/
+rust/data/
+rust/data-*/
+rust/data.*/
+rust/bin/
+dist/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+.env.*
+!.env.example
+# Local CLI wallet stores contain recovery phrases and private keys.
+.cb_client/
+wallets.jsonl
+.DS_Store
+**/*.log
+**/*.pid
+rust/crates/cb-web/dist/
+.playwright-mcp/
+rust/scripts/supervisord/data/
+rust/scripts/supervisord/logs/
+rust/crates/cb-web/art-src/
+
+# Wallet onboarding captures can expose recovery phrases.
+/docs/ui-review/*wallet-reveal*.png
+/docs/ui-review/*wallet-confirm*.png
+
+# Retired captures contain superseded landing-page copy.
+/docs/ui-review/app-15-landing-live-1920.png
+/docs/ui-review/app-16-paste-phrase-empty.png
+
+# Source archives prepared for a separate public repository.
+/release/

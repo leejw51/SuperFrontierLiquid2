@@ -1,0 +1,35 @@
+[package]
+name = "cb-rpc"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-state = { path = "../cb-state" }
+cb-tx = { path = "../cb-tx" }
+cb-block = { path = "../cb-block" }
+cb-engine = { path = "../cb-engine" }
+cb-consensus = { path = "../cb-consensus" }
+cb-schema = { path = "../cb-schema" }
+cb-crypto = { path = "../cb-crypto" }
+proptest = { workspace = true }
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+capnp-futures = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+tokio-util = { version = "0.7", features = ["compat"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+bincode = "1.3"
+rayon = { workspace = true }
+hex = "0.4"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+cb-genesis = { path = "../cb-genesis" }
+cb-crypto = { path = "../cb-crypto" }
+proptest = { workspace = true }

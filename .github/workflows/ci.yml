@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # Every test binary links RocksDB; with debug info the workspace's ~180
+  # test binaries outgrow a runner's disk and the linker dies with a bus
+  # error. CI needs pass/fail, not debuggers.
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+
+jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: toolchain (rust/rust-toolchain.toml)
+        working-directory: rust
+        run: rustup show
+      - name: make format-check
+        run: make format-check
+
+  lint-and-test:
+    name: clippy and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: free disk space
+        # Preinstalled SDKs this build never uses: about 25 GB.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: system packages (Cap'n Proto, clang for RocksDB)
+        run: sudo apt-get update && sudo apt-get install -y capnproto libclang-dev clang
+      - name: toolchain (rust/rust-toolchain.toml)
+        working-directory: rust
+        run: rustup show
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: make lint
+        run: make lint
+      - name: cargo test --workspace
+        working-directory: rust
+        # RocksDB opens many files per test database.
+        run: |
+          ulimit -n 65536 || ulimit -n 8192 || true
+          cargo test --workspace

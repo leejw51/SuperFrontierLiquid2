@@ -1,0 +1,200 @@
+/* ============================================================================
+   Shell additions.
+
+   Everything here is a mechanism the reference document did not need because it
+   was a static page: the full-height chain, the container-query host, the
+   virtualisation scroller, canvas sizing, the live toast stack, real modals and
+   the phone order sheet. No new colours, no new spacing values, no new radii —
+   every value below is a token. If a rule here contradicts app.css, app.css is
+   right and this file is the bug.
+   ========================================================================= */
+
+/* --- the height chain --------------------------------------------------- */
+/* `.term` and `.app` are `height: 100%` grids. Without an unbroken chain of
+   full-height ancestors they collapse to content height and the rail floats. */
+html, body { height: 100%; }
+#cb-root { height: 100%; }
+
+/* The terminal collapses on CONTAINER queries, not media queries, so whatever
+   wraps `.term` must declare a container. The design system calls this out
+   explicitly as the mistake that produces a terminal that never collapses. */
+.route-host { height: 100%; container-type: inline-size; min-width: 0; }
+
+/* --- virtualised table -------------------------------------------------- */
+/* The scroller is `height: rows * var(--row-h)`; each rendered row is absolutely
+   positioned at `top: index * var(--row-h)`. A <tr> cannot be positioned, so the
+   virtualised tables are grids with explicit table ARIA roles instead. */
+.vtbl { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.vtbl-head, .vrow {
+  display: grid; gap: var(--sp-8); align-items: center;
+  grid-template-columns: var(--cols); padding: 0 var(--cell-pad-x);
+  font-size: var(--density-fs); white-space: nowrap;
+}
+.vtbl-head {
+  height: var(--row-h-head); flex: 0 0 auto;
+  background: var(--surface-raised); color: var(--text-muted);
+  font-size: var(--fs-xs); font-weight: var(--fw-medium);
+  border-bottom: var(--bw-hair) solid var(--border-default);
+}
+.vtbl-scroll { position: relative; overflow: auto; flex: 1 1 auto; min-height: 0; }
+.vtbl-sizer { position: relative; width: 100%; }
+.vrow {
+  position: absolute; left: 0; right: 0; height: var(--row-h);
+  border-bottom: var(--bw-hair) solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.vrow:hover { background: var(--surface-hover); }
+.vrow > .n, .vtbl-head > .n {
+  text-align: right; font-family: var(--font-num); font-variant-numeric: tabular-nums;
+}
+.vtbl-head > .n { font-family: var(--font-ui); }
+.vrow > span { overflow: hidden; text-overflow: ellipsis; }
+.vrow > .strong { color: var(--text-primary); font-weight: var(--fw-medium); }
+
+/* --- canvas ------------------------------------------------------------- */
+/* Canvases are sized in CSS and back-buffered at devicePixelRatio in Rust. */
+.cv { display: block; width: 100%; height: 100%; }
+.cv-wrap { position: relative; flex: 1 1 auto; min-height: 0; background: var(--surface-sunken); }
+
+/* --- live toast stack --------------------------------------------------- */
+/* Above the modal scrim, not below it. The token order puts toasts under
+   modals, which is right for a toast that is merely informative and wrong for
+   the only report a failed action gets: a rejection raised while a dialog is
+   open was rendered behind the scrim and seen by nobody. Dialogs report their
+   own failures inline as well; this is the backstop for everything else. */
+.toaster {
+  position: fixed; right: var(--sp-16); bottom: calc(var(--rail-h) + var(--sp-16));
+  z-index: calc(var(--z-modal) + 1); display: flex; flex-direction: column;
+  gap: var(--sp-8); align-items: flex-end; pointer-events: none;
+}
+.toaster > .toast { pointer-events: auto; animation: toast-in var(--dur-slow) var(--ease-out); }
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .toaster > .toast { animation: none; } }
+
+/* --- real modal --------------------------------------------------------- */
+.scrim-layer {
+  position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim);
+  display: grid; place-items: center; padding: var(--sp-24);
+}
+
+/* --- phone order sheet -------------------------------------------------- */
+.sheet {
+  position: fixed; inset: auto 0 0 0; z-index: var(--z-modal);
+  background: var(--surface-panel); border-top: var(--bw-hair) solid var(--border-default);
+  max-height: 86%; overflow: auto;
+}
+
+/* --- small structural helpers ------------------------------------------- */
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); }
+.stack-8 { display: flex; flex-direction: column; gap: var(--sp-8); }
+.stack-16 { display: flex; flex-direction: column; gap: var(--sp-16); }
+.grow { flex: 1 1 auto; min-width: 0; }
+
+/* Socket down: prices hold their last value but stop looking live.
+   Nothing is hidden — the book stays on screen, visibly frozen. */
+/* The element itself may carry `.frozen`, or an ancestor may. Both forms are
+   listed because the market strip freezes one price and the book freezes a
+   whole panel. */
+.frozen .px, .frozen .price, .frozen .last, .frozen .mp,
+.px.frozen, .price.frozen, .last.frozen, .mp.frozen { color: var(--text-muted) !important; }
+.frozen .ob-row::before { opacity: .45; }
+.frozen .tick-up, .frozen .tick-down { animation: none !important; background: none !important; }
+
+/* A market that is halted, expired or settling: dimmed and not clickable. */
+.book-inert { opacity: .55; pointer-events: none; }
+
+/* The stale-price rule: the price keeps its value and gains a brass underline. */
+.stale-rule { border-bottom: var(--bw-spine) solid var(--brass); padding-bottom: 1px; }
+
+/* Screen-reader-only live region text. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* --- shell column containment ------------------------------------------- */
+/* A grid item defaults to `min-width: auto`, which lets a row whose content
+   does not fit force its track wider than the grid. `.term` and `.app` are
+   `overflow: hidden`, so the excess is silently clipped rather than scrolled:
+   at 390 the top bar's own contents pushed the whole terminal to 445px and cut
+   the trailing edge off every row beneath it. */
+.term > *, .app > * { min-width: 0; }
+.topbar, .topbar .right { min-width: 0; }
+/* The account pill is the one thing in the bar allowed to give ground: a long
+   handle truncates rather than pushing the connection status off the screen,
+   because §10.2 says the connection status is one of the three things that
+   never collapse. */
+.topbar .right .pill { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar .conn { flex: 0 0 auto; }
+
+/* --- terminal column containment ---------------------------------------- */
+/* A grid item defaults to `min-width: auto`, which lets a wide table push its
+   column past the track it was given. The terminal's own CSS does not need this
+   because in the reference every column is a fixed width; once the phone
+   breakpoint collapses everything into one `1fr` column, the blotter's
+   nowrap cells would otherwise widen the whole terminal. */
+.term-main > * { min-width: 0; }
+.term-main > .c-center { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.term-main > .c-center > * { min-width: 0; }
+
+/* --- the simulator's own controls --------------------------------------- */
+/* Present only under the mock backend, and out of the way on a phone, where the
+   top bar has already dropped the navigation to make room for the price. */
+@container (max-width: 700px) {
+  .dev-only { display: none !important; }
+}
+
+/* The two preferences follow the top bar's own rule: at phone width the bar
+   drops everything but the wordmark, the connection and the account, because
+   what is left has to fit beside a price that is not allowed to collapse.
+   Scoped to the bar, because the same component is rendered again inside the
+   phone menu and has to survive there — dropping a control from the bar is
+   only legitimate when somewhere else picks it up. */
+@container (max-width: 700px) {
+  /* The child combinator matters: the phone menu is rendered inside `.topbar`
+     and carries its own copy of the switches. A descendant selector hid those
+     too, which would have made the menu a nav drawer with the preferences
+     deleted from it — the exact loss it exists to undo. */
+  .topbar > .right .pref-only { display: none !important; }
+}
+
+/* --- the phone menu ------------------------------------------------------ */
+/* Everything the bar drops below 700px is reachable here, and nothing else is.
+   Radius follows the rule: the button that opens it is a control (4), the
+   panel floats above the page (6). No colour that is not a token. */
+.navmenu-btn { display: none; margin-left: var(--sp-8); gap: var(--sp-6); }
+@container (max-width: 700px) {
+  .navmenu-btn { display: inline-flex; }
+}
+.navmenu-scrim {
+  position: fixed; inset: 0; z-index: var(--z-dropdown); background: var(--scrim);
+}
+.navmenu {
+  position: fixed; top: var(--topbar-h); left: var(--sp-8); right: var(--sp-8);
+  z-index: calc(var(--z-dropdown) + 1);
+  max-height: calc(100% - var(--topbar-h) - var(--rail-h) - var(--sp-16));
+  overflow: auto;
+  display: flex; flex-direction: column;
+  background: var(--surface-overlay);
+  border: var(--bw-hair) solid var(--border-default);
+  border-radius: var(--r-6);
+  box-shadow: var(--elev-2);
+  padding: var(--sp-8);
+}
+.navmenu a {
+  height: var(--sp-40); display: flex; align-items: center; padding: 0 var(--sp-12);
+  border-radius: var(--r-4); font-size: var(--fs-base); text-decoration: none;
+  color: var(--text-secondary);
+  border-bottom: var(--bw-hair) solid var(--border-subtle);
+}
+.navmenu a:last-of-type { border-bottom: 0; }
+.navmenu a:hover { background: var(--surface-hover); color: var(--text-primary); }
+.navmenu a[aria-current] {
+  background: var(--surface-hover); color: var(--text-primary); font-weight: var(--fw-medium);
+}
+.navmenu-prefs {
+  display: flex; gap: var(--sp-16); align-items: center;
+  padding: var(--sp-12); margin-top: var(--sp-4);
+  border-top: var(--bw-hair) solid var(--border-default);
+}

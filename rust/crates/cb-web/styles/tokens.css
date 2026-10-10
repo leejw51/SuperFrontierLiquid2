@@ -1,0 +1,354 @@
+/* ============================================================================
+   SuperFrontierLiquid — Design Tokens v1
+   Identity: "Lacquer & Neon". Black lacquer, bone, jade, vermilion, brass.
+
+   Import once, at the root of the app:
+       @import url("./tokens.css");
+
+   Rules that the token names encode, and that you must not break:
+     1. Market colours (jade, vermilion) NEVER appear in chrome.
+        Chrome colours (bone, graphite, brass) NEVER encode market direction.
+     2. Radius encodes interactivity. Panels 0. Controls 4. Overlays 6.
+        Pills and dots 999. Never round a panel.
+     3. Numerals are tabular. Use --font-num for anything that changes.
+     4. Colour is never the only carrier of meaning. Every direction token
+        ships beside a sign, a glyph, or a position.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- 1. TYPE */
+:root {
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+             "Helvetica Neue", Arial, sans-serif;
+  /* Reserved for digits, hashes, symbols and IDs. Never for prose or labels. */
+  --font-num: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+              "Cascadia Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  --font-mono: var(--font-num);
+
+  --fs-micro: 10px;   /* block chips, superscript units          */
+  --fs-xs:    11px;   /* column headers, badges, meta            */
+  --fs-sm:    12px;   /* dense table body                        */
+  --fs-base:  13px;   /* interface default                       */
+  --fs-md:    15px;   /* panel titles, emphasised body           */
+  --fs-lg:    18px;   /* section headings                        */
+  --fs-xl:    22px;   /* screen headings, big stat               */
+  --fs-2xl:   28px;   /* live price in the market strip          */
+  --fs-3xl:   38px;   /* portfolio equity                        */
+  --fs-4xl:   52px;   /* landing headline                        */
+  --fs-5xl:   76px;   /* reserved: display specimens only        */
+
+  --lh-flat:    1;
+  --lh-tight:   1.12;
+  --lh-snug:    1.28;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.65;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  --tr-display: -0.022em;  /* >= 38px */
+  --tr-heading: -0.012em;  /* 18–28px */
+  --tr-body:     0em;
+  --tr-caps:     0.06em;   /* the ONLY place letterspaced caps are allowed:
+                              two-to-four-letter instrument tags (PERP, SPOT) */
+
+  --measure: 66ch;         /* prose line length ceiling */
+}
+
+/* ------------------------------------------------------------- 2. SPACING */
+:root {
+  --sp-2:   2px;  --sp-4:   4px;  --sp-6:   6px;  --sp-8:   8px;
+  --sp-10: 10px;  --sp-12: 12px;  --sp-16: 16px;  --sp-20: 20px;
+  --sp-24: 24px;  --sp-32: 32px;  --sp-40: 40px;  --sp-48: 48px;
+  --sp-64: 64px;  --sp-80: 80px;  --sp-96: 96px;  --sp-128: 128px;
+
+  --gutter: 1px;          /* the seam between terminal panels */
+  --page-pad: var(--sp-24);
+  --page-pad-mobile: var(--sp-16);
+}
+
+/* -------------------------------------------------------------- 3. RADIUS */
+:root {
+  --r-0:    0px;     /* panels, tables, the chart, the chain rail */
+  --r-2:    2px;     /* depth bars, sparkline caps, inline chips  */
+  --r-4:    4px;     /* buttons, inputs, selects, tabs            */
+  --r-6:    6px;     /* popovers, modals, toasts, tooltips        */
+  --r-full: 999px;   /* pills, status dots, avatars, sliders      */
+}
+
+/* ------------------------------------------------- 4. BORDER + ELEVATION */
+:root {
+  --bw-hair:   1px;
+  --bw-spine:  2px;   /* the panel spine: the signature structural device */
+  --bw-focus:  2px;
+
+  --dur-flash:   400ms;  /* price tick decay          */
+  --dur-fast:    120ms;  /* hover, focus, press       */
+  --dur-base:    180ms;  /* tab, dropdown, accordion  */
+  --dur-slow:    280ms;  /* modal, drawer, toast      */
+  --dur-pulse:  1600ms;  /* connection heartbeat      */
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.30, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-linear: linear;
+}
+
+/* -------------------------------------------------------------- 5. LAYERS */
+:root {
+  --z-base:    0;
+  --z-sticky:  10;   /* sticky table headers, market strip */
+  --z-rail:    20;   /* the chain rail                     */
+  --z-dropdown:30;
+  --z-tooltip: 40;
+  --z-toast:   50;
+  --z-modal:   60;
+}
+
+/* ================================================== 6. DARK THEME (primary)
+   Applied at :root by default and re-asserted under [data-theme="dark"].   */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* --- surface hierarchy: five steps, warm graphite, never blue-black --- */
+  --surface-canvas:  #0E0C0B;  /* the page itself, the seam between panels  */
+  --surface-panel:   #171412;  /* every terminal panel                      */
+  --surface-raised:  #1F1B18;  /* table headers, inputs, inactive tabs      */
+  --surface-overlay: #272320;  /* modals, dropdowns, tooltips, toasts       */
+  --surface-hover:   #302B27;  /* row hover, button hover                   */
+  --surface-sunken:  #0A0908;  /* chart plot area, code, the tape gutter    */
+  --scrim:           rgba(8, 6, 5, 0.72);
+
+  --border-subtle:   #241F1B;  /* inside a panel: row rules, cell dividers  */
+  --border-default:  #332D28;  /* panel edge, input edge, table outline     */
+  --border-strong:   #4A423B;  /* hovered control, focused container        */
+
+  /* --- ink --- */
+  --text-primary:    #F4EFE7;  /* 17.0:1 on canvas — prices, headings       */
+  --text-secondary:  #B8AFA4;  /*  9.0:1 — body, secondary values          */
+  --text-muted:      #9C9286;  /*  6.4:1 — column heads, meta, timestamps  */
+  --text-faint:      #7A7168;  /*  4.1:1 — NON-TEXT ONLY: rules, glyphs    */
+  --text-inverse:    #0E0C0B;  /* on bone / jade / vermilion fills          */
+  --text-disabled:   #6A6159;
+
+  /* --- market direction: jade rises, vermilion falls ---
+     Verified pair separation: ΔE 32.2 normal, 12.7 deuteranopia,
+     11.9 protanopia. Both are ALWAYS paired with a sign and a glyph.   */
+  --bid:             #34E0B4;  /* buy · bid · long · profit · up          */
+  --bid-strong:      #6BF0CE;  /* the active buy button, hover             */
+  --bid-dim:         #1E8E72;  /* depth bar fill, candle body on dark      */
+  --bid-wash:        rgba(52, 224, 180, 0.13);  /* depth bar, row tint      */
+  --bid-wash-strong: rgba(52, 224, 180, 0.26);  /* fill flash               */
+
+  --ask:             #FF7053;  /* sell · ask · short · loss · down        */
+  --ask-strong:      #FF957E;
+  --ask-dim:         #A8412B;
+  --ask-wash:        rgba(255, 112, 83, 0.13);
+  --ask-wash-strong: rgba(255, 112, 83, 0.28);
+
+  /* aliases — use these in P&L and position code so intent reads clearly */
+  --profit: var(--bid);
+  --loss:   var(--ask);
+
+  /* --- system status: never used for market direction --- */
+  --brass:        #FFD166;  /* warning · cooldown · stale · halted · rank 1 */
+  --brass-dim:    #A8801F;
+  --brass-wash:   rgba(255, 209, 102, 0.12);
+  --signal:       #78B4E0;  /* pending on chain · informational            */
+  --signal-dim:   #3B6C8F;
+  --signal-wash:  rgba(120, 180, 224, 0.12);
+  --neutral:      var(--text-muted);
+  --neutral-wash: rgba(244, 239, 231, 0.06);
+
+  /* Liquidation danger is NOT a fifth hue. It is vermilion at full
+     strength plus the hazard texture plus the word. See --hazard.         */
+  --danger:       var(--ask);
+  --danger-wash:  var(--ask-wash-strong);
+  --hazard: repeating-linear-gradient(135deg,
+              rgba(255,112,83,0.30) 0 6px,
+              rgba(255,112,83,0.06) 6px 12px);
+
+  /* --- brand: the product speaks through form and bone, not a hue --- */
+  --brand-ink:    #F4EFE7;   /* the wordmark, the primary CTA fill         */
+  --brand-on-ink: #0E0C0B;
+  --focus-ring:   #F4EFE7;
+  --focus-halo:   rgba(244, 239, 231, 0.22);
+
+  /* --- chart --- */
+  --chart-grid:   #221E1A;
+  --chart-axis:   #3A332D;
+  --chart-cross:  #7A7168;
+  --chart-volume: rgba(244, 239, 231, 0.10);
+  --chart-mark:   var(--signal);   /* mark-price line */
+  --chart-liq:    var(--ask);      /* liquidation-price line */
+
+  /* --- elevation: dark surfaces lift with a top highlight, not a blur --- */
+  --elev-0: none;
+  --elev-1: inset 0 1px 0 rgba(244,239,231,0.05);
+  --elev-2: 0 4px 14px -4px rgba(0,0,0,0.70),
+            0 0 0 1px var(--border-default),
+            inset 0 1px 0 rgba(244,239,231,0.06);
+  --elev-3: 0 24px 64px -12px rgba(0,0,0,0.80),
+            0 0 0 1px var(--border-default),
+            inset 0 1px 0 rgba(244,239,231,0.07);
+  /* Reserved for LIVE data only — a connected socket, a ticking price.
+     Never decoration. */
+  --elev-live: 0 0 18px -6px currentColor;
+}
+
+/* ============================================================ 7. LIGHT THEME
+   Warm paper, not white. Selected values, not an inverted flip.
+   Every text token verified >= 4.5:1 on canvas, panel, raised AND hover.     */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-canvas:  #EFEAE2;
+  --surface-panel:   #FBF9F5;
+  --surface-raised:  #FFFFFF;
+  --surface-overlay: #FFFFFF;
+  --surface-hover:   #EBE5DB;
+  --surface-sunken:  #F5F1EA;
+  --scrim:           rgba(23, 19, 15, 0.38);
+
+  --border-subtle:   #E3DCD0;
+  --border-default:  #CFC5B6;
+  --border-strong:   #A89C8B;
+
+  --text-primary:    #17130F;  /* 15.4:1 on canvas */
+  --text-secondary:  #524A41;  /*  7.3:1 */
+  --text-muted:      #665D53;  /*  5.4:1 */
+  --text-faint:      #8B8175;  /*  NON-TEXT ONLY */
+  --text-inverse:    #FBF9F5;
+  --text-disabled:   #9A9084;
+
+  --bid:             #00705B;  /* 5.1:1 on canvas, 4.8:1 on hover */
+  --bid-strong:      #00563F;
+  --bid-dim:         #67C3AC;
+  --bid-wash:        rgba(0, 112, 91, 0.16);
+  --bid-wash-strong: rgba(0, 112, 91, 0.24);
+
+  --ask:             #BC3318;  /* 4.8:1 on canvas, 4.6:1 on hover */
+  --ask-strong:      #97240D;
+  --ask-dim:         #EC9C87;
+  --ask-wash:        rgba(188, 51, 24, 0.15);
+  --ask-wash-strong: rgba(188, 51, 24, 0.22);
+
+  /* Brass carries too little contrast to be text on paper. In the light
+     theme it is a FILL and a BORDER only; the warning's words wear ink. */
+  --brass:        #8A6200;
+  --brass-dim:    #D9A320;
+  --brass-wash:   #FBEFD0;
+  --signal:       #15679E;
+  --signal-dim:   #7FB0D2;
+  --signal-wash:  rgba(21, 103, 158, 0.10);
+  --neutral:      var(--text-muted);
+  --neutral-wash: rgba(23, 19, 15, 0.05);
+
+  --danger:       var(--ask);
+  --danger-wash:  var(--ask-wash-strong);
+  --hazard: repeating-linear-gradient(135deg,
+              rgba(188,51,24,0.26) 0 6px,
+              rgba(188,51,24,0.05) 6px 12px);
+
+  --brand-ink:    #17130F;
+  --brand-on-ink: #FBF9F5;
+  --focus-ring:   #17130F;
+  --focus-halo:   rgba(23, 19, 15, 0.18);
+
+  --chart-grid:   #E3DCD0;
+  --chart-axis:   #BFB4A3;
+  --chart-cross:  #8B8175;
+  --chart-volume: rgba(23, 19, 15, 0.10);
+  --chart-mark:   var(--signal);
+  --chart-liq:    var(--ask);
+
+  --elev-0: none;
+  --elev-1: inset 0 1px 0 rgba(255,255,255,0.9);
+  --elev-2: 0 4px 14px -6px rgba(46, 34, 22, 0.24),
+            0 0 0 1px var(--border-default);
+  --elev-3: 0 24px 56px -16px rgba(46, 34, 22, 0.32),
+            0 0 0 1px var(--border-default);
+  --elev-live: 0 0 0 0 transparent;  /* glow is a dark-theme device only */
+}
+
+/* ================================================================ 8. DENSITY
+   Comfortable is the DEFAULT, because a stranger arrives before a
+   professional does. Compact is a one-switch preference, remembered.
+   Row heights are FIXED, not content-driven — virtualisation depends on it. */
+:root,
+:root[data-density="comfortable"] {
+  --row-h:        32px;  /* orders, positions, fills, ledger, leaderboard   */
+  --row-h-tight:  22px;  /* order book, trade tape, block list              */
+  --row-h-head:   30px;  /* sticky table header                             */
+  --control-h:    36px;  /* button, input, select                           */
+  --control-h-sm: 28px;  /* inline / in-table control                       */
+  --panel-head-h: 40px;
+  --tabbar-h:     38px;
+  --topbar-h:     52px;
+  --strip-h:      64px;  /* the market strip                                */
+  --rail-h:       40px;  /* the chain rail                                  */
+  --cell-pad-x:   12px;
+  --cell-pad-x-sm: 8px;
+  --density-fs:   var(--fs-base);
+  --density-fs-sm: var(--fs-sm);
+}
+:root[data-density="compact"] {
+  --row-h:        22px;
+  --row-h-tight:  17px;
+  --row-h-head:   24px;
+  --control-h:    28px;
+  --control-h-sm: 22px;
+  --panel-head-h: 30px;
+  --tabbar-h:     30px;
+  --topbar-h:     44px;
+  --strip-h:      52px;
+  --rail-h:       32px;
+  --cell-pad-x:   8px;
+  --cell-pad-x-sm: 6px;
+  --density-fs:   var(--fs-sm);
+  --density-fs-sm: var(--fs-xs);
+}
+
+/* A DENSITY LOCK, not a third density. Compact exists to fit more rows on a
+   screen; an irreversible confirmation wants fewer things on a screen, so the
+   surfaces that force-settle a market or change margin requirements re-declare
+   the comfortable values locally and ignore the user's preference. This is the
+   only scope in the system allowed to override the density choice, and it may
+   only be used on a confirmation, never on a table.                          */
+[data-density-lock="comfortable"] {
+  --row-h:        32px;
+  --row-h-tight:  22px;
+  --row-h-head:   30px;
+  --control-h:    36px;
+  --control-h-sm: 28px;
+  --panel-head-h: 40px;
+  --tabbar-h:     38px;
+  --cell-pad-x:   12px;
+  --cell-pad-x-sm: 8px;
+  --density-fs:   var(--fs-base);
+  --density-fs-sm: var(--fs-sm);
+}
+
+/* ======================================================= 9. REDUCED MOTION
+   Motion is removed; the INFORMATION the motion carried is not. Components
+   that flashed hold a static direction glyph and a held tint instead.      */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-flash: 1ms;
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+    --dur-pulse: 1ms;
+  }
+}
+
+/* ============================================ 10. GLOBAL NUMERIC BEHAVIOUR
+   Every digit in this product is tabular. Prices must not jitter.         */
+.num, [data-num] {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1, "ss01" 1;
+  letter-spacing: 0;
+}

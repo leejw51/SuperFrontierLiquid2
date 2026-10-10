@@ -1,0 +1,36 @@
+[package]
+name = "cb-sim"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cb-sim"
+path = "src/main.rs"
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+cb-tx = { path = "../cb-tx" }
+cb-rpc = { path = "../cb-rpc" }
+cb-schema = { path = "../cb-schema" }
+cb-block = { path = "../cb-block" }
+cb-state = { path = "../cb-state" }
+cb-engine = { path = "../cb-engine" }
+anyhow = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+rand = { workspace = true }
+secp256k1 = { workspace = true }
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+tempfile = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

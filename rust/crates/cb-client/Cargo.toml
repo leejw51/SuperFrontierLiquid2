@@ -1,0 +1,41 @@
+[package]
+name = "cb-client"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cb-client"
+path = "src/main.rs"
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+cb-schema = { path = "../cb-schema" }
+cb-state = { path = "../cb-state" }
+cb-tx = { path = "../cb-tx" }
+cb-rpc = { path = "../cb-rpc" }
+clap = { workspace = true }
+tokio = { workspace = true }
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+secp256k1 = { workspace = true }
+dirs = "5"
+rpassword = "=7.3.1"
+bip32 = "0.5"
+bip39 = "2"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+bincode = "1.3"

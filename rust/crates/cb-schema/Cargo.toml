@@ -1,0 +1,20 @@
+[package]
+name = "cb-schema"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[dependencies]
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+capnp-futures = { workspace = true }
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+
+[build-dependencies]
+capnpc = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

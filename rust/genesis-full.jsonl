@@ -1,0 +1,186 @@
+# SuperFrontierLiquid full-universe genesis.
+#
+# This file declares the complete tradable universe of `docs/PLAN.md` §3:
+#
+#   Class   Underlyings              Instruments
+#   ------  -----------------------  ----------------------------
+#   Crypto  BTC, ETH, SOL            spot, perpetual, dated future
+#   Equity  AAPL, TSLA, NVDA, SPY    spot, perpetual
+#
+# `genesis.jsonl` and `genesis-perps.jsonl` remain as they were and are pinned
+# by their own tests; this is a third, wider chain configuration, not a
+# replacement for either.
+#
+# ---------------------------------------------------------------------------
+# THE ORDER OF THE `perp_market` AND `future_market` LINES IS CONSENSUS DATA.
+#
+# The Nth `perp_market` line becomes `DerivId::perp(N)`, the Nth `future_market`
+# line becomes `DerivId::future(N)`, and those identifiers are what every stored
+# position, order and oracle update refers to. Reordering a line silently
+# repoints every position on the chain at a different contract.
+#
+# The order below matches `cb_types::symbols::PERPS` and `::FUTURES` exactly,
+# and `cb-genesis/tests/full_genesis.rs` asserts that it does — including the
+# risk parameters on each line. If you add or move a market here, that test
+# tells you what else has to move with it.
+# ---------------------------------------------------------------------------
+#
+# `${VAR}` tokens are substituted from the environment before JSON parsing; a
+# sibling `.env` file is auto-loaded and real env vars win. See
+# `crates/cb-genesis/src/spec.rs` for the substitution rules.
+#
+# Required env vars:
+#   MYCHAINID          chain ID (u32). 1 = mainnet, 2 = testnet.
+#   MYDENOM            native denom string (e.g. "ULD"). Display-only; the
+#                      quote asset is `AssetId::Usd` regardless.
+#   MYWALLET0..2       validator wallets (leader rotation follows line order).
+#   MYWALLET3          community wallet.
+#   INITIAL_AMOUNT     starting USD credit per validator wallet, micro-USD.
+#   ORACLE_AUTHORITY   the sole address allowed to sign `OracleUpdate` for
+#                      every market on this chain.
+#   DEMO_TRADER0..2    demo traders pre-funded with margin collateral.
+#
+# On ORACLE_AUTHORITY being a single key: `genesis-perps.jsonl` deliberately
+# splits the oracle role per market so one compromised key cannot tip two feeds.
+# This file uses one authority instead, because the simulator runs one price
+# service that publishes all eleven feeds and splitting it would mean operating
+# eleven keys for no isolation that anyone would actually get. A production
+# deployment should go back to per-market authorities.
+{"kind":"chain","chain_id":${MYCHAINID},"denom":"${MYDENOM}","insurance_fund_seed":"5000000000000"}
+# ---------------------------------------------------------------------------
+# Validators. Line order is leader-rotation order; validators[0] proposes view 0.
+{"kind":"validator","seed":"cb-validator-0","wallet":"${MYWALLET0}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-1","wallet":"${MYWALLET1}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-2","wallet":"${MYWALLET2}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-3","wallet":"${MYWALLET3}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+# ---------------------------------------------------------------------------
+# SPOT MARKETS
+#
+# `min_qty` is in the base asset's own base units (`AssetId::decimals()`), and
+# `tick_size` is in wire-price units. The wire price scale is NOT the same on
+# every market: it is `10^(quote_decimals + 8 - base_decimals)` — see
+# `cb_types::scales::spot_price_scale_exp`. Concretely:
+#
+#   BTC/USD     10^6 per $1   (BTC has 8 decimals)
+#   SOL/USD     10^5 per $1   (SOL has 9)
+#   AAPL & co.  10^8 per $1   (equities have 6, same as USD)
+#
+# So a `tick_size` of 100000 is ten cents on BTC, and 1000000 is one cent on an
+# equity. They are different numbers for the same reason the assets have
+# different decimals, which is why this is spelled out per line below.
+{"kind":"market","id":"btc_usd","base":"btc","quote":"usd","tick_size":100000,"min_qty":1000,"fee_bps":10}
+# ETH/USD is the one market whose wire price scale is degenerate: 18 base
+# decimals against the executor's fixed 1e8 notional divisor gives a negative
+# exponent, so one whole ETH costs less than one wire-price unit and no human
+# price can be represented (`ScaleError::SubUnitPriceScale`). ETH's decimals are
+# frozen in consensus state and cannot be revisited, so this market keeps the
+# unit tick/lot the older genesis files use. It trades in raw integers; the
+# perpetual below is the usable way to take ETH exposure.
+{"kind":"market","id":"eth_usd","base":"eth","quote":"usd","tick_size":1,"min_qty":1,"fee_bps":10}
+# SOL/USD: tick 1000 = $0.01, min_qty 1000000 lamports = 0.001 SOL.
+{"kind":"market","id":"sol_usd","base":"sol","quote":"usd","tick_size":1000,"min_qty":1000000,"fee_bps":10}
+# Equity spot. tick 1000000 = $0.01, the conventional penny increment.
+# min_qty 10000 = 0.01 share: fine enough for fractional-share trading, coarse
+# enough that a quantity computed at the wrong decimal scale fails the lot check
+# instead of executing 100x too large. Every equity gets identical parameters —
+# a uniform tier is one less thing for a trader to get wrong.
+{"kind":"market","id":"aapl_usd","base":"aapl","quote":"usd","tick_size":1000000,"min_qty":10000,"fee_bps":10}
+{"kind":"market","id":"tsla_usd","base":"tsla","quote":"usd","tick_size":1000000,"min_qty":10000,"fee_bps":10}
+{"kind":"market","id":"nvda_usd","base":"nvda","quote":"usd","tick_size":1000000,"min_qty":10000,"fee_bps":10}
+{"kind":"market","id":"spy_usd","base":"spy","quote":"usd","tick_size":1000000,"min_qty":10000,"fee_bps":10}
+# ---------------------------------------------------------------------------
+# PERPETUAL MARKETS — line order maps to DerivId::perp(N).
+#
+#   0 BTC-PERP   50x     4 TSLA-PERP  5x
+#   1 ETH-PERP   25x     5 NVDA-PERP  5x
+#   2 SOL-PERP   20x     6 SPY-PERP   5x
+#   3 AAPL-PERP  5x
+#
+# Indices 0 and 1 match `genesis.jsonl` / `genesis-perps.jsonl` so tooling and
+# stored state stay compatible across all three configurations.
+#
+# `tick_size` and `lot_size` are at the q8 price scale and the fixed 1e8
+# contract-quantity scale respectively. NOTE that `lot_size` is in CONTRACT
+# units (1e8 per whole underlying, the same for every market), not in the
+# underlying's spot base units — for an equity those differ by 100x. See
+# `cb_types::scales`.
+#
+# Margin: `initial_margin_bps` is the reciprocal of the leverage cap and
+# `maintenance_margin_bps` is half of it, asserted by
+# `cb_types::symbols`'s `risk_params_are_internally_consistent`. Leverage tiers
+# and the reasoning behind each cap are documented on `cb_types::symbols::PERPS`.
+#
+# Execution enforces these per-market risk limits. The default piecewise
+# leverage tiers remain an additional floor; the stricter requirement wins
+# separately for each market, before summing the portfolio requirement.
+{"kind":"perp_market","id":"btc_perp","underlying":"btc","tick_size":"100","lot_size":"1000","max_leverage_x100":5000,"initial_margin_bps":200,"maintenance_margin_bps":100,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"100000000000000","paused":false}
+{"kind":"perp_market","id":"eth_perp","underlying":"eth","tick_size":"100","lot_size":"1000","max_leverage_x100":2500,"initial_margin_bps":400,"maintenance_margin_bps":200,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"50000000000000","paused":false}
+{"kind":"perp_market","id":"sol_perp","underlying":"sol","tick_size":"100","lot_size":"1000","max_leverage_x100":2000,"initial_margin_bps":500,"maintenance_margin_bps":250,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"20000000000000","paused":false}
+# Equity perpetuals. Cash-settled against a mocked reference price; nothing
+# settles into a real share and no dividend or corporate action is modelled.
+#
+# Three parameters differ from the crypto perps above, all for the same
+# underlying reason — a synthetic equity has no arbitrage path back to a real
+# share, and the real thing gaps on news:
+#   * 5x cap / 20% IM / 10% MM, so a position survives an earnings-sized gap.
+#   * tick 1000000 = $0.01 at the q8 scale, matching the equity spot tick.
+#   * funding_rate_cap_q9 doubled to 2000000. Funding is the only force pulling
+#     the contract back toward the reference price, and with no arbitrageur able
+#     to deliver the underlying it has to do that work alone.
+# max_position_notional is $5M, well below BTC's $100M: these books are the
+# thinnest on the venue and a position has to be closable into them.
+{"kind":"perp_market","id":"aapl_perp","underlying":"aapl","tick_size":"1000000","lot_size":"1000000","max_leverage_x100":500,"initial_margin_bps":2000,"maintenance_margin_bps":1000,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":2000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"5000000000000","paused":false}
+{"kind":"perp_market","id":"tsla_perp","underlying":"tsla","tick_size":"1000000","lot_size":"1000000","max_leverage_x100":500,"initial_margin_bps":2000,"maintenance_margin_bps":1000,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":2000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"5000000000000","paused":false}
+{"kind":"perp_market","id":"nvda_perp","underlying":"nvda","tick_size":"1000000","lot_size":"1000000","max_leverage_x100":500,"initial_margin_bps":2000,"maintenance_margin_bps":1000,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":2000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"5000000000000","paused":false}
+{"kind":"perp_market","id":"spy_perp","underlying":"spy","tick_size":"1000000","lot_size":"1000000","max_leverage_x100":500,"initial_margin_bps":2000,"maintenance_margin_bps":1000,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":2000000,"oracle_authority":"${ORACLE_AUTHORITY}","max_position_notional":"5000000000000","paused":false}
+# ---------------------------------------------------------------------------
+# DATED FUTURES — line order maps to DerivId::future(N).
+#
+#   0 ETH-260626  ~90 days   10x
+#   1 BTC-261225  ~180 days  25x
+#   2 SOL-270326  ~270 days  10x
+#
+# Crypto only; equities list spot and perpetual only, per `docs/PLAN.md` §3.
+# Index 0 is an ETH contract to match both older genesis files.
+#
+# Each carries roughly half the leverage of the perpetual on the same
+# underlying: a dated contract is exposed to basis that need not converge until
+# expiry and can widen sharply near it, which a perpetual's continuously
+# converging mark does not have.
+#
+# `expiry_height` is a BLOCK HEIGHT, not a date. The `YYMMDD` in the symbol is a
+# nominal label and nothing derives one from the other — block time is a
+# deployment property, so a chain booted late would have every derived date
+# quietly wrong. Heights below are ~90 / ~180 / ~270 days at one-second blocks,
+# spaced so they expire in the same order their labels suggest and far enough
+# out that a dev cluster never races expiry.
+#
+# `settlement_method` 0 = TWAP over the last `settlement_window_blocks` mark
+# snapshots (1800 blocks ~ 30 minutes), which is harder to manipulate at the
+# settlement instant than method 1's single oracle read.
+{"kind":"future_market","id":"eth_260626","underlying":"eth","tick_size":"100","lot_size":"1000","max_leverage_x100":1000,"initial_margin_bps":1000,"maintenance_margin_bps":500,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"expiry_height":7776000,"settlement_method":0,"settlement_window_blocks":1800,"oracle_authority":"${ORACLE_AUTHORITY}","paused":false}
+{"kind":"future_market","id":"btc_261225","underlying":"btc","tick_size":"100","lot_size":"1000","max_leverage_x100":2500,"initial_margin_bps":400,"maintenance_margin_bps":200,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"expiry_height":15552000,"settlement_method":0,"settlement_window_blocks":1800,"oracle_authority":"${ORACLE_AUTHORITY}","paused":false}
+{"kind":"future_market","id":"sol_270326","underlying":"sol","tick_size":"100","lot_size":"1000","max_leverage_x100":1000,"initial_margin_bps":1000,"maintenance_margin_bps":500,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"expiry_height":23328000,"settlement_method":0,"settlement_window_blocks":1800,"oracle_authority":"${ORACLE_AUTHORITY}","paused":false}
+# ---------------------------------------------------------------------------
+# Demo margin accounts. `AdjustMargin` is not a supported tx in v1, so any
+# address that wants to place a perp order on a fresh chain MUST be seeded here.
+# $10M each (micro-USD) — enough to hold a position on every market at once,
+# including the 20% initial margin an equity perp declares.
+{"kind":"margin_account","address":"${DEMO_TRADER0}","collateral":"10000000000000"}
+{"kind":"margin_account","address":"${DEMO_TRADER1}","collateral":"10000000000000"}
+{"kind":"margin_account","address":"${DEMO_TRADER2}","collateral":"10000000000000"}
+# ---------------------------------------------------------------------------
+# Treasury and community wallet. Balances are per-asset base units, so the same
+# human quantity is a different integer on each line: 1000 BTC is 1e11 (8
+# decimals), 10000 ETH is 1e22 (18), 10000 SOL is 1e13 (9), and 100000 shares of
+# an equity is 1e11 (6). Getting one of these wrong by a factor of ten is the
+# single easiest mistake to make in this file.
+{"kind":"company","address":"${TREASURY}","balances":{"btc":"100000000000","eth":"10000000000000000000000","sol":"10000000000000","usd":"100000000000000","aapl":"100000000000","tsla":"100000000000","nvda":"100000000000","spy":"100000000000"}}
+{"kind":"community_wallet","address":"${MYWALLET3}","balances":{"usd":"${INITIAL_AMOUNT}"}}
+# ---------------------------------------------------------------------------
+# Seeded simulation accounts. 64 deterministic traders derived from
+# `keccak256(seed_prefix || i)`, each funded on every asset so a bot can quote
+# both sides of any market in the universe without a faucet round-trip.
+#
+# Per trader: 100 BTC, 1000 ETH, 1000 SOL, $10M, and 1000 shares of each equity.
+{"kind":"sim","num_traders":64,"seed_prefix":"cb-sim-trader-","balances":{"btc":"10000000000","eth":"1000000000000000000000","sol":"1000000000000","usd":"10000000000000","aapl":"1000000000","tsla":"1000000000","nvda":"1000000000","spy":"1000000000"}}

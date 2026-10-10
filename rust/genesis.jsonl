@@ -1,0 +1,42 @@
+# SuperFrontierLiquid genesis. `${VAR}` tokens are substituted from the environment
+# before parsing. A sibling `.env` file (if present in the same directory) is
+# loaded automatically; real env vars take precedence over `.env`.
+#
+# Required vars (see `.env.example`):
+#   MYCHAINID       chain ID (u32). 1 = mainnet, 2 = testnet, etc.
+#   MYDENOM         native denom name (e.g. "ULD"). Persisted in Meta; display-only.
+#   MYWALLET0       master node    (validator-0, proposer for view 0)
+#   MYWALLET1       peer node      (validator-1)
+#   MYWALLET2       peer node      (validator-2)
+#   MYWALLET3       reserved wallet (community_wallet)
+#   INITIAL_AMOUNT  starting credit per wallet, raw u128 (3-decimal scaling)
+#
+# Initial credit: ${INITIAL_AMOUNT} raw = 1,000,000,000.000 USD per wallet
+# when INITIAL_AMOUNT=1000000000000. The 1/1000 scaling is the on-chain unit
+# convention; ${MYDENOM} is the user-facing denom string but does NOT change
+# the AssetId enum (asset values are credited as USD).
+{"kind":"chain","chain_id":${MYCHAINID},"denom":"${MYDENOM}"}
+{"kind":"validator","seed":"cb-validator-0","wallet":"${MYWALLET0}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-1","wallet":"${MYWALLET1}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-2","wallet":"${MYWALLET2}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-3","wallet":"${MYWALLET3}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"market","id":"btc_usd","base":"btc","quote":"usd","tick_size":1,"min_qty":1,"fee_bps":10}
+{"kind":"market","id":"eth_usd","base":"eth","quote":"usd","tick_size":1,"min_qty":1,"fee_bps":10}
+# ----------------------------------------------------------------------------
+# Derivative markets (M1: type surface only — matching engine ships in M3).
+#
+# Each `perp_market` line ships a perpetual contract; line order maps to
+# `DerivId::perp(N)` (so `btc_perp` below is `DerivId::perp(0)`). `tick_size`
+# and `lot_size` are 1e8-scaled values; `oracle_authority` is the sole address
+# allowed to sign `OracleUpdate` txs for that market.
+{"kind":"perp_market","id":"btc_perp","underlying":"btc","tick_size":"100","lot_size":"1000","max_leverage_x100":5000,"initial_margin_bps":200,"maintenance_margin_bps":100,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${MYWALLET0}","max_position_notional":"100000000000000","paused":false}
+# Dated futures (M5). `expiry_height` is the block height at which the
+# market freezes and settles; `settlement_method` is 0 (TWAP over the last
+# 30 minutes of mark history) or 1 (oracle spot at expiry). Same JSONL line
+# order → `DerivId::future(N)`. The expiry below (~30 days at 1 s blocks
+# from a fresh chain) is intentionally far out so dev clusters never race
+# expiry; production genesis files will set this to a quarterly boundary.
+{"kind":"future_market","id":"eth_2026q1","underlying":"eth","tick_size":"100","lot_size":"1000","max_leverage_x100":2500,"initial_margin_bps":400,"maintenance_margin_bps":200,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"expiry_height":2592000,"settlement_method":0,"settlement_window_blocks":1800,"oracle_authority":"${MYWALLET0}","paused":false}
+{"kind":"company","address":"0x000000000000000000000000000000000000c0c0","balances":{"btc":"100000000000","eth":"10000000000000000000000","usd":"100000000000000"}}
+{"kind":"community_wallet","address":"${MYWALLET3}","balances":{"usd":"${INITIAL_AMOUNT}"}}
+{"kind":"sim","num_traders":64,"seed_prefix":"cb-sim-trader-","balances":{"btc":"10000000000","eth":"1000000000000000000000","usd":"10000000000000"}}

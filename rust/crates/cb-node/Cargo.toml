@@ -1,0 +1,60 @@
+[package]
+name = "cb-node"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cb-node"
+path = "src/main.rs"
+
+# The honest order-throughput benchmark. Separate from `cb-node` so it can open
+# its own throwaway database instead of the node's `--data-dir`.
+[[bin]]
+name = "cb-order-bench"
+path = "src/bin/cb-order-bench.rs"
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+cb-state = { path = "../cb-state" }
+cb-tx = { path = "../cb-tx" }
+cb-block = { path = "../cb-block" }
+cb-consensus = { path = "../cb-consensus" }
+cb-net = { path = "../cb-net" }
+cb-rpc = { path = "../cb-rpc" }
+cb-genesis = { path = "../cb-genesis" }
+cb-schema = { path = "../cb-schema" }
+cb-dashboard = { path = "../cb-dashboard" }
+cb-sim = { path = "../cb-sim" }
+anyhow = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+bincode = "1.3"
+proptest = { workspace = true }
+rand = { workspace = true }
+crossbeam-channel = "0.5"
+rayon = { workspace = true }
+tempfile = { workspace = true }
+hex = { workspace = true }
+secp256k1 = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+cb-crypto = { path = "../cb-crypto" }
+cb-net = { path = "../cb-net" }
+cb-tx = { path = "../cb-tx" }
+cb-state = { path = "../cb-state" }
+cb-types = { path = "../cb-types" }
+cb-block = { path = "../cb-block" }
+bincode = "1.3"
+proptest = { workspace = true }

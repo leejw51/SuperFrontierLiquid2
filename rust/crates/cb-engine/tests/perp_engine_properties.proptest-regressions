@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 5baf37bed7e07cd4565b9cb3106f31ae3302c1d99c55fe4cdfba0caa65ee7ab2 # shrinks to makers = [Maker { owner: 1, side: Sell, price: 101, qty: 4, reduce_only: false }, Maker { owner: 1, side: Sell, price: 101, qty: 20, reduce_only: true }], positions = [(Buy, 0), (Buy, 1), (Buy, 0), (Buy, 0), (Buy, 0)], taker = 0, taker_side = Buy, taker_price = 101, taker_qty = 5, taker_tif = Gtc, taker_ro = false

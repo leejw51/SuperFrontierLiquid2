@@ -1,0 +1,28 @@
+[package]
+name = "cb-dashboard"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-state = { path = "../cb-state" }
+cb-block = { path = "../cb-block" }
+cb-rpc = { path = "../cb-rpc" }
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+bincode = "1.3"
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+cb-engine = { path = "../cb-engine" }
+tempfile = { workspace = true }
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1"

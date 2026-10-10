@@ -1,0 +1,63 @@
+# Peer-to-peer configuration for the local three-node cluster.
+#
+# Every threshold the gossip layer uses lives here rather than in the code, so
+# an operator can retune aggression without a rebuild. Durations are TOML
+# tables of `secs` and `nanos`, which is how `std::time::Duration` serializes.
+#
+# These values are sized for a three-node cluster on one machine. On a real
+# network you would raise `max_peers`, raise the timeouts to cover real
+# round-trip times, and lower `max_messages_per_window` to something the
+# expected block rate actually justifies.
+
+# Connect to everyone; there are only three of us.
+max_peers = 8
+target_outbound = 4
+max_known_peers = 64
+peers_per_response = 16
+
+# A catch-up request may pull at most this many blocks at a time, and at most
+# this many out-of-order bodies are buffered while the gap below them fills.
+max_range_blocks = 128
+max_pending_blocks = 256
+
+# Gossip deduplication memory, per kind. Forgetting an entry costs a redundant
+# fetch, never a correctness failure.
+seen_cache = 8192
+
+request_timeout = { secs = 10, nanos = 0 }
+ping_interval = { secs = 15, nanos = 0 }
+peer_timeout = { secs = 60, nanos = 0 }
+discovery_interval = { secs = 30, nanos = 0 }
+
+# Flood control. The block interval in this cluster is 50ms, so 2000 messages
+# a second is generous headroom over the announce/fetch traffic one node can
+# legitimately generate.
+max_messages_per_window = 2000
+rate_window = { secs = 1, nanos = 0 }
+
+[score]
+initial = 100
+max = 200
+floor = -1000
+# A peer at or below this score is dropped and refused until the ban expires.
+ban_at_or_below = 0
+ban = { secs = 300, nanos = 0 }
+
+# Useful behaviour earns score back, so a peer that times out during a network
+# hiccup recovers by being useful rather than being banned for a transient
+# fault.
+good_block = 2
+good_tx = 1
+good_peers = 1
+
+# Redundant announcements are the normal cost of gossip, so they barely count.
+duplicate = -1
+timeout = -5
+unsolicited = -10
+flood = -25
+bad_signature = -40
+# 100 / 40 means the third bad block bans. Deliberately not the first: a block
+# can fail verification for reasons that are not the sender's fault, such as
+# losing a race against our own head.
+bad_block = -40
+protocol_violation = -50

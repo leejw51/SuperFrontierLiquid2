@@ -1,0 +1,13 @@
+[package]
+name = "cb-engine"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

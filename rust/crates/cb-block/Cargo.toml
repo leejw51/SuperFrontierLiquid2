@@ -1,0 +1,25 @@
+[package]
+name = "cb-block"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+cb-engine = { path = "../cb-engine" }
+cb-state = { path = "../cb-state" }
+cb-tx = { path = "../cb-tx" }
+cb-consensus = { path = "../cb-consensus" }
+serde = { workspace = true }
+bincode = "1.3"
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+rayon = { workspace = true }
+rustc-hash = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+secp256k1 = { workspace = true }
+cb-genesis = { path = "../cb-genesis" }

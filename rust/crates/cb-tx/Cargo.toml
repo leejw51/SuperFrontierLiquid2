@@ -1,0 +1,17 @@
+[package]
+name = "cb-tx"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+cb-types = { path = "../cb-types" }
+cb-crypto = { path = "../cb-crypto" }
+cb-schema = { path = "../cb-schema" }
+serde = { workspace = true }
+bincode = "1.3"
+thiserror = { workspace = true }
+capnp = { workspace = true }
+secp256k1 = { workspace = true }
+rayon = { workspace = true }

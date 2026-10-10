@@ -1,0 +1,68 @@
+# SuperFrontierLiquid perps/futures genesis (M9).
+#
+# This file is a "realistic" superset of `genesis.jsonl`: validators + native
+# denom + spot markets + 2 perps + 1 dated future + insurance fund + demo
+# margin accounts. It is what `make startperps` boots and what the operator
+# runbook (`docs/runbook-perps.md`) walks through end-to-end.
+#
+# `${VAR}` tokens are substituted before JSON parsing. A sibling `.env` file
+# is auto-loaded; real env vars take precedence over `.env`. See
+# `crates/cb-genesis/src/spec.rs` for the full substitution rules.
+#
+# Required env vars (defaults are fine for a fresh local run — see `.env.perps`):
+#   MYCHAINID         chain ID (u32). 1 = mainnet, 2 = testnet.
+#   MYDENOM           native denom string (e.g. "ULD"). Display-only.
+#   MYWALLET0..3      validator + community-wallet addresses.
+#   INITIAL_AMOUNT    starting USD credit per validator wallet.
+#   ORACLE_BTC        oracle authority for BtcPerp + EthDatedQ2.
+#                     Only this address can sign `OracleUpdate` for those
+#                     markets. Distinct from validators so the price feed and
+#                     consensus signers can be operated independently.
+#   ORACLE_ETH        oracle authority for EthPerp.
+#   DEMO_TRADER0..2   demo trader addresses pre-funded with margin collateral
+#                     so they can place perp orders before any AdjustMargin tx
+#                     surface ships (none yet — see `docs/design/perps-trading.md`).
+{"kind":"chain","chain_id":${MYCHAINID},"denom":"${MYDENOM}","insurance_fund_seed":"1000000000000"}
+{"kind":"validator","seed":"cb-validator-0","wallet":"${MYWALLET0}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-1","wallet":"${MYWALLET1}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-2","wallet":"${MYWALLET2}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+{"kind":"validator","seed":"cb-validator-3","wallet":"${MYWALLET3}","weight":1,"initial_amount":"${INITIAL_AMOUNT}"}
+# ----------------------------------------------------------------------------
+# Spot markets (kept so spot-aware tooling and the existing testblockchain
+# script keep working alongside the perps surface).
+{"kind":"market","id":"btc_usd","base":"btc","quote":"usd","tick_size":1,"min_qty":1,"fee_bps":10}
+{"kind":"market","id":"eth_usd","base":"eth","quote":"usd","tick_size":1,"min_qty":1,"fee_bps":10}
+# ----------------------------------------------------------------------------
+# Perp markets. Line order maps to `DerivId::perp(N)`:
+#   line 0 -> DerivId::perp(0)  BtcPerp   (50x)
+#   line 1 -> DerivId::perp(1)  EthPerp   (25x)
+#
+# `tick_size` and `lot_size` are 1e8-scaled values. `taker_fee_bps` /
+# `maker_fee_bps_signed` follow Hyperliquid-ish defaults (3 bps taker,
+# -1 bp maker rebate). Funding cadence is 3600 blocks (~1h at 1s blocks).
+# `oracle_authority` is the SOLE address allowed to sign `OracleUpdate` for
+# that market — distinct per market so a key compromise doesn't tip both feeds.
+{"kind":"perp_market","id":"btc_perp","underlying":"btc","tick_size":"100","lot_size":"1000","max_leverage_x100":5000,"initial_margin_bps":200,"maintenance_margin_bps":100,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${ORACLE_BTC}","max_position_notional":"100000000000000","paused":false}
+{"kind":"perp_market","id":"eth_perp","underlying":"eth","tick_size":"100","lot_size":"1000","max_leverage_x100":2500,"initial_margin_bps":400,"maintenance_margin_bps":200,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"funding_interval_blocks":3600,"funding_rate_cap_q9":1000000,"oracle_authority":"${ORACLE_ETH}","max_position_notional":"50000000000000","paused":false}
+# ----------------------------------------------------------------------------
+# Dated future. `expiry_height` is ~4M blocks from genesis (≈46 days at 1s
+# blocks) so dev clusters never race expiry; production genesis files set
+# this to a quarterly boundary. `settlement_method`: 0 = TWAP of the last
+# `settlement_window_blocks` mark snapshots, 1 = oracle spot at expiry.
+{"kind":"future_market","id":"eth_dated_q2","underlying":"eth","tick_size":"100","lot_size":"1000","max_leverage_x100":1000,"initial_margin_bps":1000,"maintenance_margin_bps":500,"taker_fee_bps":3,"maker_fee_bps_signed":-1,"expiry_height":4000000,"settlement_method":0,"settlement_window_blocks":1800,"oracle_authority":"${ORACLE_BTC}","paused":false}
+# ----------------------------------------------------------------------------
+# Demo accounts. `AdjustMargin` is not yet a supported tx (deferred past v1),
+# so any address that wants to place perp orders on a fresh chain MUST be
+# seeded here. $10M USD per trader (10_000_000_000_000 micro-USD) is enough
+# to buy ~100 BTC at $100k * 1% IM = $100k; well above any tier-1 IM.
+{"kind":"margin_account","address":"${DEMO_TRADER0}","collateral":"10000000000000"}
+{"kind":"margin_account","address":"${DEMO_TRADER1}","collateral":"10000000000000"}
+{"kind":"margin_account","address":"${DEMO_TRADER2}","collateral":"10000000000000"}
+# ----------------------------------------------------------------------------
+# Treasury + community wallet (preserved from `genesis.jsonl`).
+{"kind":"company","address":"${TREASURY}","balances":{"btc":"100000000000","eth":"10000000000000000000000","usd":"100000000000000"}}
+{"kind":"community_wallet","address":"${MYWALLET3}","balances":{"usd":"${INITIAL_AMOUNT}"}}
+# ----------------------------------------------------------------------------
+# Sim traders — same pattern as `genesis.jsonl` so the existing simulator
+# keeps working against this genesis.
+{"kind":"sim","num_traders":64,"seed_prefix":"cb-sim-trader-","balances":{"btc":"10000000000","eth":"1000000000000000000000","usd":"10000000000000"}}

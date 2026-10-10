@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SuperFrontierLiquid Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ---- shared tokens and globals (from the flow page) ---- */
+:root{
+  --bg:#F5F7F4; --panel:#FFFFFF; --ink:#18221F; --muted:#5E6B69; --line:#D6DDDA; --line-soft:#E7ECE9;
+  --chain:#0E7C86; --chain-soft:#DDF0F1; --exch:#B8681F; --exch-soft:#F7E8D6; --infra:#5B6C8F; --infra-soft:#E4E9F3;
+  --warn:#A83A2C; --warn-soft:#F8E4E0; --ok:#2F7D4A; --code:#EEF2F0; --focus:#0E7C86;
+  --shadow:0 1px 2px rgba(20,40,38,.06),0 6px 20px rgba(20,40,38,.05);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1513; --panel:#161E1B; --ink:#E4EBE8; --muted:#95A3A0; --line:#2A3531; --line-soft:#1F2925;
+    --chain:#4FC3CB; --chain-soft:#12312F; --exch:#E1A45C; --exch-soft:#3A2A18; --infra:#93A6CF; --infra-soft:#1E2635;
+    --warn:#E07A6C; --warn-soft:#3A1F1B; --ok:#6CC08B; --code:#0C1210; --focus:#4FC3CB;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1513; --panel:#161E1B; --ink:#E4EBE8; --muted:#95A3A0; --line:#2A3531; --line-soft:#1F2925;
+  --chain:#4FC3CB; --chain-soft:#12312F; --exch:#E1A45C; --exch-soft:#3A2A18; --infra:#93A6CF; --infra-soft:#1E2635;
+  --warn:#E07A6C; --warn-soft:#3A1F1B; --ok:#6CC08B; --code:#0C1210; --focus:#4FC3CB;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+#doc-flow{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans","IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+[lang="ko"]{font-family:"IBM Plex Sans KR","IBM Plex Sans","Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all}
+:root[data-lang="ko"] [lang="en"]{display:none}
+:root:not([data-lang="ko"]) [lang="ko"]{display:none}
+#doc-flow code, #doc-flow pre, #doc-flow .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+#doc-flow code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.88em}
+#doc-flow a{color:var(--chain)}
+#doc-flow h1, #doc-flow h2, #doc-flow h3{text-wrap:balance;line-height:1.2;margin:0}
+#doc-flow h1{font-size:30px;font-weight:600}
+#doc-flow h2{font-size:22px;font-weight:600;margin-top:8px}
+#doc-flow h3{font-size:16px;font-weight:600}
+#doc-flow p{margin:0;max-width:68ch}
+#doc-flow .wrap{max-width:1080px;margin:0 auto;padding-block:0 64px;padding-inline:16px}
+#doc-flow header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);}
+#doc-flow header.top .in{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#doc-flow .brand{display:flex;align-items:baseline;gap:10px}
+#doc-flow .brand .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#doc-flow .langsw{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+#doc-flow .langsw button{background:var(--panel);color:var(--muted);border:0;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+#doc-flow .langsw button[aria-pressed="true"]{background:var(--chain);color:#fff}
+#doc-flow .langsw button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+#doc-flow section{margin-top:56px;display:grid;gap:18px}
+#doc-flow .lede{font-size:18px;max-width:64ch}
+#doc-flow .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+#doc-flow .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+#doc-flow .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:4px}
+#doc-flow .kpi .n{font-family:"IBM Plex Mono",monospace;font-size:24px;font-variant-numeric:tabular-nums;color:var(--ink)}
+#doc-flow .kpi .l{font-size:13px;color:var(--muted)}
+#doc-flow .kpi.chain{border-top:3px solid var(--chain)}
+#doc-flow .kpi.exch{border-top:3px solid var(--exch)}
+#doc-flow .kpi.infra{border-top:3px solid var(--infra)}
+#doc-flow figure{margin:0;display:grid;gap:10px}
+#doc-flow figure .scroll{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+#doc-flow svg{max-width:100%;height:auto;display:block;color:var(--ink);font-family:"IBM Plex Sans","IBM Plex Sans KR",system-ui,sans-serif}
+#doc-flow svg .box{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+#doc-flow svg .box.chain{fill:var(--chain-soft);stroke:var(--chain)}
+#doc-flow svg .box.exch{fill:var(--exch-soft);stroke:var(--exch)}
+#doc-flow svg .box.infra{fill:var(--infra-soft);stroke:var(--infra)}
+#doc-flow svg .box.thread{fill:var(--panel);stroke:var(--chain);stroke-dasharray:4 3}
+#doc-flow svg text{font-size:12px;fill:currentColor}
+#doc-flow svg text.t{font-weight:600;font-size:13px}
+#doc-flow svg text.s{font-size:11px;fill:var(--muted)}
+#doc-flow svg text.l{font-size:10.5px;fill:var(--muted)}
+#doc-flow svg .edge{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.75}
+#doc-flow svg .edge.stream{stroke-dasharray:5 4}
+#doc-flow svg .node{cursor:pointer}
+#doc-flow svg .node:hover .box{stroke-width:2}
+#doc-flow svg .node.on .box{stroke-width:2.5;filter:drop-shadow(0 0 4px var(--chain))}
+#doc-flow svg .node:focus-visible{outline:none}
+#doc-flow svg .node:focus-visible .box{stroke-width:2.5}
+#doc-flow figcaption{font-size:13.5px;color:var(--muted);max-width:72ch}
+#doc-flow .detail{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--chain);border-radius:10px;padding:14px 16px;display:grid;gap:6px;min-height:84px}
+#doc-flow .detail h3{font-size:15px}
+#doc-flow .detail p{font-size:14px;max-width:80ch}
+#doc-flow .detail .mono{font-size:12.5px;color:var(--muted)}
+#doc-flow .steps{display:grid;gap:0;counter-reset:st;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+#doc-flow .step{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:12px 14px;border-top:1px solid var(--line-soft);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit;color:inherit;width:100%}
+#doc-flow .step:first-child{border-top:0}
+#doc-flow .step:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+#doc-flow .step .num{counter-increment:st;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);padding-top:2px}
+#doc-flow .step .num::before{content:counter(st,decimal-leading-zero)}
+#doc-flow .step .who{font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+#doc-flow .step .who.chain{color:var(--chain)}
+#doc-flow .step .who.exch{color:var(--exch)}
+#doc-flow .step .who.infra{color:var(--infra)}
+#doc-flow .step .what{font-weight:500}
+#doc-flow .step .how{display:none;font-size:14px;color:var(--muted);margin-top:4px;max-width:80ch}
+#doc-flow .step .how p{max-width:none}
+#doc-flow .step[aria-expanded="true"]{background:var(--chain-soft)}
+#doc-flow .step[aria-expanded="true"] .how{display:block}
+#doc-flow .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){#doc-flow .two{grid-template-columns:1fr}}
+#doc-flow .tabs{display:flex;gap:6px;flex-wrap:wrap}
+#doc-flow .tabs button{font:inherit;font-size:13.5px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;cursor:pointer}
+#doc-flow .tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#doc-flow .tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+#doc-flow .tabpanel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px}
+#doc-flow .tabpanel[hidden]{display:none}
+#doc-flow .tabpanel .fig{font-family:"IBM Plex Mono",monospace;font-size:22px;font-variant-numeric:tabular-nums}
+#doc-flow table{border-collapse:collapse;width:100%;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+#doc-flow .tablewrap{overflow-x:auto}
+#doc-flow th, #doc-flow td{text-align:left;padding:9px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
+#doc-flow thead th{background:var(--code);border-top:0;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:.03em}
+#doc-flow td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+#doc-flow .bar{height:8px;background:var(--line-soft);border-radius:4px;overflow:hidden;min-width:120px}
+#doc-flow .bar i{display:block;height:100%;background:var(--chain)}
+#doc-flow .levers{display:grid;gap:10px;counter-reset:lv}
+#doc-flow .lever{display:grid;grid-template-columns:36px 1fr;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+#doc-flow .lever .k{counter-increment:lv;font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+#doc-flow .lever .k::before{content:counter(lv)}
+#doc-flow .lever h3{font-size:15px}
+#doc-flow .lever p{font-size:14px;color:var(--muted);max-width:80ch;margin-top:3px}
+#doc-flow .lever .tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;font-weight:500}
+#doc-flow .tag.eng{background:var(--chain-soft);color:var(--chain)}
+#doc-flow .tag.ver{background:var(--exch-soft);color:var(--exch)}
+#doc-flow .tag.lat{background:var(--infra-soft);color:var(--infra)}
+#doc-flow .callout{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--panel);border-radius:10px;padding:14px 16px;display:grid;gap:6px}
+#doc-flow .callout p{font-size:14.5px;max-width:80ch}
+#doc-flow ul.plain{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14.5px;max-width:80ch}
+#doc-flow .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+#doc-flow .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+#doc-flow .legend .c::before{background:var(--chain)}
+#doc-flow .legend .e::before{background:var(--exch)}
+#doc-flow .legend .i::before{background:var(--infra)}
+#doc-flow footer{margin-top:64px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion:no-preference){#doc-flow .step, #doc-flow .tabs button, #doc-flow .langsw button{transition:background .15s}}
+/* ---- the atlas, scoped ---- */
+#doc-atlas{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+#doc-atlas code, #doc-atlas .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
+#doc-atlas code{background:var(--code);padding:.08em .35em;border-radius:4px}
+#doc-atlas a{color:var(--chain)}
+#doc-atlas h1, #doc-atlas h2, #doc-atlas h3{text-wrap:balance;margin:0;line-height:1.2}
+#doc-atlas h1{font-size:clamp(26px,4vw,38px);font-weight:600;letter-spacing:-.02em}
+#doc-atlas h2{font-size:22px;font-weight:600;letter-spacing:-.01em}
+#doc-atlas h3{font-size:15px;font-weight:600}
+#doc-atlas p{margin:0}
+#doc-atlas .wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+#doc-atlas header.top{padding-block:28px 8px}
+#doc-atlas .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#doc-atlas .lede{max-width:66ch;color:var(--muted);margin-top:10px}
+#doc-atlas nav.tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--topbar-h));z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
+#doc-atlas nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px}
+#doc-atlas nav.tabs button{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);font:inherit;font-weight:500;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+#doc-atlas nav.tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line);box-shadow:var(--shadow)}
+#doc-atlas nav.tabs button:focus-visible, #doc-atlas button:focus-visible, #doc-atlas [tabindex]:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+#doc-atlas section.view{padding-block:28px 48px}
+#doc-atlas section.view[hidden]{display:none}
+#doc-atlas .grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:20px;align-items:start}
+@media (max-width:820px){#doc-atlas .grid2{grid-template-columns:1fr}}
+#doc-atlas .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+#doc-atlas .panel .pad{padding:18px}
+#doc-atlas .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-top:10px}
+#doc-atlas .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+#doc-atlas figure{margin:0}
+#doc-atlas figure svg{max-width:100%;height:auto;display:block}
+#doc-atlas figcaption{font-size:13px;color:var(--muted);padding:10px 4px 0}
+#doc-atlas .diagram-scroll{overflow-x:auto}
+#doc-atlas /* crate map */
+.crate{cursor:pointer}
+#doc-atlas .crate rect{fill:var(--panel);stroke:var(--line);stroke-width:1.2;transition:stroke .15s,fill .15s}
+#doc-atlas .crate.l1 rect{stroke:var(--chain)}
+#doc-atlas .crate.ex rect{stroke:var(--exch)}
+#doc-atlas .crate.in rect{stroke:var(--infra)}
+#doc-atlas .crate.l1:hover rect, #doc-atlas .crate.l1.on rect{fill:var(--chain-soft)}
+#doc-atlas .crate.ex:hover rect, #doc-atlas .crate.ex.on rect{fill:var(--exch-soft)}
+#doc-atlas .crate.in:hover rect, #doc-atlas .crate.in.on rect{fill:var(--infra-soft)}
+#doc-atlas .crate.on rect{stroke-width:2.4}
+#doc-atlas .crate text{fill:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:11.5px;pointer-events:none}
+#doc-atlas .crate .sub{fill:var(--muted);font-family:"IBM Plex Sans",sans-serif;font-size:10.5px}
+#doc-atlas .crate.dim rect{opacity:.35}
+#doc-atlas .crate.dim text{opacity:.35}
+#doc-atlas .edge{stroke:var(--muted);stroke-width:1;fill:none;opacity:.35}
+#doc-atlas .edge.on{stroke:var(--chain);opacity:1;stroke-width:1.8}
+#doc-atlas .edge.on.up{stroke:var(--exch)}
+#doc-atlas .band{fill:none;stroke:var(--line-soft);stroke-dasharray:3 4}
+#doc-atlas .bandlabel{fill:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
+#doc-atlas .detail h3{font-family:"IBM Plex Mono",monospace;font-size:16px}
+#doc-atlas .detail .tag{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:10px;color:var(--ink)}
+#doc-atlas .tag.l1{background:var(--chain-soft)}
+#doc-atlas .tag.ex{background:var(--exch-soft)}
+#doc-atlas .tag.in{background:var(--infra-soft)}
+#doc-atlas .detail dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 0;font-size:13.5px}
+#doc-atlas .detail dt{color:var(--muted)}
+#doc-atlas .detail dd{margin:0}
+#doc-atlas .chips{display:flex;flex-wrap:wrap;gap:6px}
+#doc-atlas .chip{border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-family:"IBM Plex Mono",monospace;font-size:12px;cursor:pointer;background:var(--panel)}
+#doc-atlas .chip:hover{border-color:var(--chain)}
+#doc-atlas .path{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);word-break:break-all}
+#doc-atlas /* processes */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+#doc-atlas th, #doc-atlas td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+#doc-atlas th{font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+#doc-atlas td.mono, #doc-atlas th.mono{font-family:"IBM Plex Mono",monospace;font-size:12.5px;white-space:nowrap}
+#doc-atlas .tablewrap{overflow-x:auto}
+#doc-atlas .num{font-variant-numeric:tabular-nums}
+#doc-atlas /* flow */
+.steps{display:flex;flex-direction:column;gap:6px;counter-reset:s}
+#doc-atlas .step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:12px 12px 12px 10px;border:1px solid transparent;border-radius:8px;cursor:pointer;background:transparent}
+#doc-atlas .step:hover{background:var(--panel)}
+#doc-atlas .step.on{background:var(--panel);border-color:var(--chain);box-shadow:var(--shadow)}
+#doc-atlas .step .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);padding-top:3px}
+#doc-atlas .step.on .n{color:var(--chain)}
+#doc-atlas .step h3{font-size:14.5px}
+#doc-atlas .step p{font-size:13.5px;color:var(--muted);margin-top:3px}
+#doc-atlas .step .where{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);margin-top:6px;opacity:.9}
+#doc-atlas .node rect{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+#doc-atlas .node text{fill:var(--ink);font-size:12px;font-family:"IBM Plex Sans",sans-serif}
+#doc-atlas .node .k{font-family:"IBM Plex Mono",monospace;fill:var(--muted);font-size:10.5px}
+#doc-atlas .node.on rect{stroke:var(--chain);stroke-width:2.4;fill:var(--chain-soft)}
+#doc-atlas .node.done rect{stroke:var(--chain);opacity:.9}
+#doc-atlas .flow-edge{stroke:var(--muted);stroke-width:1.2;fill:none;opacity:.5}
+#doc-atlas .flow-edge.on{stroke:var(--chain);opacity:1;stroke-width:2}
+#doc-atlas .flow-edge.done{stroke:var(--chain);opacity:.6}
+#doc-atlas .flow-label{fill:var(--muted);font-size:10.5px;font-family:"IBM Plex Mono",monospace}
+#doc-atlas .flow-label.on{fill:var(--chain)}
+#doc-atlas .stepbar{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+#doc-atlas .btn{appearance:none;font:inherit;font-weight:500;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer}
+#doc-atlas .btn.primary{background:var(--chain);border-color:var(--chain);color:#fff}
+#doc-atlas .btn:disabled{opacity:.45;cursor:default}
+#doc-atlas .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+#doc-atlas .kv .cell{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}
+#doc-atlas .kv .cell b{display:block;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:15px}
+#doc-atlas .kv .cell span{font-size:12px;color:var(--muted)}
+#doc-atlas .callout{border-left:3px solid var(--exch);background:var(--exch-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-top:16px}
+#doc-atlas .callout.warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel))}
+#doc-atlas /* threads */
+.th{cursor:pointer}
+#doc-atlas .th rect{fill:var(--panel);stroke:var(--line);stroke-width:1.2;transition:fill .15s,stroke .15s}
+#doc-atlas .th.match rect{stroke:var(--exch);stroke-width:2}
+#doc-atlas .th.pool rect{stroke:var(--chain)}
+#doc-atlas .th.io rect{stroke:var(--infra)}
+#doc-atlas .th.match:hover rect, #doc-atlas .th.match.on rect{fill:var(--exch-soft)}
+#doc-atlas .th.pool:hover rect, #doc-atlas .th.pool.on rect{fill:var(--chain-soft)}
+#doc-atlas .th.io:hover rect, #doc-atlas .th.io.on rect{fill:var(--infra-soft)}
+#doc-atlas .th.on rect{stroke-width:2.6}
+#doc-atlas .th text{fill:var(--ink);font-size:12.5px;font-family:"IBM Plex Sans",sans-serif;pointer-events:none}
+#doc-atlas .th .k{fill:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:10.5px}
+#doc-atlas .th-edge{stroke:var(--muted);stroke-width:1.3;fill:none;opacity:.55}
+#doc-atlas .th-lab{fill:var(--muted);font-size:10.5px;font-family:"IBM Plex Mono",monospace}
+#doc-atlas .th-band{fill:none;stroke:var(--line-soft);stroke-dasharray:3 4}
+#doc-atlas /* cost bar */
+.cb-seg rect{stroke:none}
+#doc-atlas .cb-seg text{font-size:11.5px;font-family:"IBM Plex Mono",monospace;fill:var(--ink)}
+#doc-atlas .cb-axis{fill:var(--muted);font-size:11px;font-family:"IBM Plex Mono",monospace}
+#doc-atlas .cb-rule{stroke:var(--line-soft);stroke-width:1}
+#doc-atlas /* languages */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+#doc-atlas .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+#doc-atlas .card .eyebrow{margin-bottom:6px}
+#doc-atlas .card ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+#doc-atlas .card li{margin:3px 0}
+#doc-atlas .card li b{color:var(--ink);font-weight:500}
+#doc-atlas details{border:1px solid var(--line);border-radius:8px;background:var(--panel);margin-top:10px}
+#doc-atlas details summary{cursor:pointer;padding:10px 14px;font-weight:500;font-size:14px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+#doc-atlas details summary::after{content:"+";font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+#doc-atlas details[open] summary::after{content:"–"}
+#doc-atlas details .body{padding:0 14px 14px;font-size:13.5px}
+#doc-atlas .rpc{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+#doc-atlas .rpc span{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:4px 8px;border:1px solid var(--line-soft);border-radius:6px}
+#doc-atlas .rpc span.stream{border-color:var(--chain);color:var(--chain)}
+#doc-atlas /* storage */
+.stores{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+#doc-atlas .cf{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#doc-atlas .cf button{appearance:none;font-family:"IBM Plex Mono",monospace;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 9px;border-radius:6px;cursor:pointer}
+#doc-atlas .cf button.on{background:var(--chain-soft);border-color:var(--chain)}
+#doc-atlas .cf button.root{border-style:dashed}
+#doc-atlas .cfnote{margin-top:10px;font-size:13.5px;min-height:3.2em;color:var(--muted)}
+#doc-atlas .cfnote b{color:var(--ink);font-family:"IBM Plex Mono",monospace;font-weight:500}
+#doc-atlas .lost li{margin:6px 0}
+#doc-atlas .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#doc-atlas footer{padding-block:20px 40px;font-size:12.5px;color:var(--muted)}
+/* ---- the atlas at phone width: it was drawn for a desk ---- */
+@media (max-width:820px){ #doc-atlas .grid2{grid-template-columns:minmax(0,1fr)} }
+#doc-atlas svg{max-width:100%;height:auto}
+#doc-atlas :has(> svg){overflow-x:auto;max-width:100%}
+#doc-atlas table{display:block;max-width:100%;overflow-x:auto}
+#doc-atlas .wrap{min-width:0}
+/* ---- the shell ---- */
+
+:root{--topbar-h:52px}
+#topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);border-bottom:1px solid var(--line);min-height:var(--topbar-h)}
+#topbar .in{max-width:1180px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#topbar .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+#topbar .brand .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#topbar .brand strong{font-weight:600}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.seg button{background:transparent;color:var(--muted);border:0;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.lang button[aria-pressed="true"]{background:var(--chain);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.seg button .hint{font-size:11px;color:inherit;opacity:.7}
+#topbar .seg.lang[data-off="1"]{opacity:.45}
+.doc[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.doc{animation:docin .18s ease-out}}
+@keyframes docin{from{opacity:.6}to{opacity:1}}
+
+</style>
+</head>
+<body>
+
+<header id="topbar"><div class="in">
+  <div class="brand">
+    <span class="eyebrow">SuperFrontierLiquid</span>
+    <strong><span lang="en">Architecture</span><span lang="ko">아키텍처</span></strong>
+  </div>
+  <div class="seg" role="group" aria-label="Document">
+    <button type="button" id="sw-flow" aria-pressed="true"><span lang="en">Flow</span><span lang="ko">흐름</span><span class="hint">EN · KO</span></button>
+    <button type="button" id="sw-atlas" aria-pressed="false"><span lang="en">Atlas</span><span lang="ko">지도</span><span class="hint">EN</span></button>
+  </div>
+  <div class="seg lang" id="langsw" role="group" aria-label="Language">
+    <button type="button" id="lang-en" aria-pressed="true" data-lang="en">English</button>
+    <button type="button" id="lang-ko" aria-pressed="false" data-lang="ko">한국어</button>
+  </div>
+</div></header>
+
+<div id="doc-flow" class="doc">
+
+
+
+
+<div class="wrap">
+
+<section>
+  <div class="eyebrow"><span lang="en">What it is · as of 2026-10-10</span><span lang="ko">무엇인가 · 2026-10-10 기준</span></div>
+  <h1><span lang="en">Validators that order by quorum, a checkable change log, and an order book that lives in memory</span><span lang="ko">정족수로 순서를 정하는 검증자들, 검증 가능한 변경 로그, 메모리에 사는 오더북</span></h1>
+  <p class="lede">
+    <span lang="en">SuperFrontierLiquid is a Layer 1 exchange shaped after Hyperliquid: on-chain central limit order books for spot, perpetual and dated futures across seventeen instruments. Since ADR 0008 (2026-09-25) its blocks are <strong>ordered by a Byzantine-fault-tolerant quorum of validators and executed after commit</strong>: a chained HotStuff with two-chain finality, four validators tolerating one liar. Every validator executes the committed sequence itself and checks a hash chain over what changed; an executed block carries its proposal and quorum certificate as a finality proof. The single sequencer of ADR 0007 is still there as the other scheme, and still what <code>make start</code> runs. Since then: the BFT chain commits 60,000 signed orders/s at 5 ms p50 (2026-09-29); block identity excludes signatures and every derivative fill needs a mark fresher than 600 blocks (ADR 0009, 2026-09-30); and an order the executor refuses is reported at once on <code>streamRejected</code> instead of sitting pending (2026-10-10).</span>
+    <span lang="ko">SuperFrontierLiquid는 Hyperliquid의 형태를 따른 레이어 1 거래소입니다. 현물·무기한·만기 선물 17개 상품의 중앙 지정가 오더북이 온체인에 있습니다. ADR 0008(2026-09-25) 이후 블록은 <strong>비잔틴 장애 허용 검증자 정족수가 순서를 정하고, 커밋 뒤에 실행</strong>됩니다. 2체인 확정성을 가진 체인드 HotStuff이며, 검증자 넷이 거짓말쟁이 하나를 견딥니다. 모든 검증자가 커밋된 순서를 직접 실행하고 변경분의 해시 체인을 대조하며, 실행된 블록은 제안과 정족수 인증서를 확정성 증명으로 싣고 다닙니다. ADR 0007의 단일 시퀀서는 다른 방식으로 남아 있고, <code>make start</code>가 여전히 그것을 돌립니다. 그 뒤로: BFT 체인은 서명 주문 60,000건/s를 p50 5 ms에 커밋하고(2026-09-29), 블록 식별자는 서명을 제외하며 모든 파생상품 체결은 600블록 이내의 마크를 요구하고(ADR 0009, 2026-09-30), 실행기가 거부한 주문은 대기 상태로 남는 대신 <code>streamRejected</code>로 즉시 보고됩니다(2026-10-10).</span>
+  </p>
+  <div class="kpis">
+    <div class="kpi chain"><span class="n">413–417k</span><span class="l"><span lang="en">orders applied/s, engine only, 100,000 accounts, pre-signed, no network. <code>make orderbench</code>, 2026-09-23</span><span lang="ko">초당 적용 주문, 엔진만, 계정 10만 개, 서명 사전 완료, 네트워크 없음. <code>make orderbench</code>, 2026-09-23</span></span></div>
+    <div class="kpi chain"><span class="n">206–208k</span><span class="l"><span lang="en">matched orders/s in the same run. Hyperliquid publishes 200,000 orders/s for its whole engine, with consensus</span><span lang="ko">같은 실행의 초당 체결 주문. Hyperliquid는 합의를 포함한 엔진 전체로 200,000 주문/s를 공개</span></span></div>
+    <div class="kpi exch"><span class="n">60,000</span><span class="l"><span lang="en">signed orders/s committed by a four-validator BFT quorum, every signature verified by every validator, all four on one machine, none refused at admission; about half applied, the generator's traders run dry. <code>make startbft</code> + <code>make loadbft</code>, 2026-09-29</span><span lang="ko">검증자 넷의 BFT 정족수가 초당 커밋한 서명 주문. 모든 검증자가 모든 서명을 검증, 넷 다 한 머신, 접수 거부 없음. 적용은 약 절반, 생성기의 트레이더 잔고가 바닥남. <code>make startbft</code> + <code>make loadbft</code>, 2026-09-29</span></span></div>
+    <div class="kpi infra"><span class="n">5 / 15–29 ms</span><span class="l"><span lang="en">proposal-to-commit p50 / p99 at 60,000 orders/s (2026-09-29; the 2026-09-25 code did 5–7 ms p50 at 40,000 and 2–3 ms at 20,000), four validators, same machine, no network hop. Hyperliquid publishes about 70 ms block finality</span><span lang="ko">초당 60,000 주문에서 제안→커밋 p50 / p99 (2026-09-29; 2026-09-25 코드는 40,000에서 p50 5–7 ms, 20,000에서 2–3 ms), 검증자 넷, 같은 머신, 네트워크 홉 없음. Hyperliquid는 블록 확정 약 70 ms를 공개</span></span></div>
+    <div class="kpi chain"><span class="n">458k / 1,023k</span><span class="l"><span lang="en">orders applied/s by the single sequencer with its in-process generator signing / stamping placeholder signatures, balances unlimited, M5 Max; the block-loop thread is the bound. <code>CB_BENCH_UNSIGNED=1 make start2</code>, 2026-09-29</span><span lang="ko">단일 시퀀서가 내장 생성기로 초당 적용한 주문, 생성기가 서명할 때 / 자리표시 서명을 찍을 때, 잔고 무제한, M5 Max; 블록 루프 스레드가 한계. <code>CB_BENCH_UNSIGNED=1 make start2</code>, 2026-09-29</span></span></div>
+  </div>
+  <div class="legend"><span class="c"><span lang="en">chain: cb-node, cb-block, cb-engine, cb-state</span><span lang="ko">체인: cb-node, cb-block, cb-engine, cb-state</span></span><span class="e"><span lang="en">exchange: cb-gateway, cb-web, cb-oracle, cb-sim</span><span lang="ko">거래소: cb-gateway, cb-web, cb-oracle, cb-sim</span></span><span class="i"><span lang="en">infrastructure: RocksDB, SQLite, ports</span><span lang="ko">인프라: RocksDB, SQLite, 포트</span></span></div>
+</section>
+
+<section id="map">
+  <div class="eyebrow"><span lang="en">Component map</span><span lang="ko">구성 요소 지도</span></div>
+  <h2><span lang="en">Who talks to whom. Click a box.</span><span lang="ko">누가 누구와 이야기하는가. 상자를 클릭하세요.</span></h2>
+  <figure>
+    <div class="scroll">
+    <svg id="mapsvg" viewBox="0 0 960 600" role="img" aria-label="Browser to gateway over JSON and WebSocket; gateway to node over Cap'n Proto; inside the node an RPC pool, mempool, matching thread and writer thread; RocksDB written by the writer; block stream out to gateway, replicas and dashboard; oracle and sim feeding the RPC pool.">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+      </defs>
+
+      <!-- browser -->
+      <g class="node" data-id="web" tabindex="0" role="button">
+        <rect class="box exch" x="380" y="16" width="200" height="54" rx="8"/>
+        <text class="t" x="480" y="38" text-anchor="middle"><tspan lang="en">Browser · cb-web</tspan><tspan lang="ko">브라우저 · cb-web</tspan></text>
+        <text class="s" x="480" y="56" text-anchor="middle"><tspan lang="en">Rust → WebAssembly, 8 screens, EN/KO</tspan><tspan lang="ko">Rust → WebAssembly, 화면 8개, EN/KO</tspan></text>
+      </g>
+      <path class="edge" d="M470 70 V118" marker-end="url(#arr)"/>
+      <path class="edge stream" d="M490 118 V70" marker-end="url(#arr)"/>
+      <text class="l" x="500" y="98"><tspan lang="en">JSON + WebSocket, decimals as strings</tspan><tspan lang="ko">JSON + WebSocket, 소수는 문자열</tspan></text>
+
+      <!-- gateway -->
+      <g class="node" data-id="gw" tabindex="0" role="button">
+        <rect class="box exch" x="340" y="120" width="280" height="64" rx="8"/>
+        <text class="t" x="480" y="142" text-anchor="middle">cb-gateway</text>
+        <text class="s" x="480" y="160" text-anchor="middle"><tspan lang="en">EVM login, custodial keys, mirror of accounts and books</tspan><tspan lang="ko">EVM 로그인, 수탁 키, 계정·오더북 미러</tspan></text>
+        <text class="s" x="480" y="176" text-anchor="middle"><tspan lang="en">serves every read; never asks the matching thread</tspan><tspan lang="ko">모든 읽기를 제공, 매칭 스레드에 묻지 않음</tspan></text>
+      </g>
+      <g class="node" data-id="sqlite" tabindex="0" role="button">
+        <rect class="box infra" x="660" y="126" width="150" height="52" rx="8"/>
+        <text class="t" x="735" y="148" text-anchor="middle">SQLite</text>
+        <text class="s" x="735" y="166" text-anchor="middle"><tspan lang="en">users, sessions, candles</tspan><tspan lang="ko">사용자, 세션, 캔들</tspan></text>
+      </g>
+      <path class="edge" d="M620 152 H658" marker-end="url(#arr)"/>
+
+      <path class="edge" d="M440 184 V232" marker-end="url(#arr)"/>
+      <text class="l" x="450" y="212"><tspan lang="en">Cap'n Proto submitTx</tspan><tspan lang="ko">Cap'n Proto submitTx</tspan></text>
+      <path class="edge stream" d="M560 232 V184" marker-end="url(#arr)"/>
+      <text class="l" x="568" y="212"><tspan lang="en">streamBlocks + streamRejected</tspan><tspan lang="ko">streamBlocks + streamRejected</tspan></text>
+
+      <!-- oracle & sim -->
+      <g class="node" data-id="oracle" tabindex="0" role="button">
+        <rect class="box exch" x="40" y="120" width="150" height="52" rx="8"/>
+        <text class="t" x="115" y="142" text-anchor="middle">cb-oracle</text>
+        <text class="s" x="115" y="160" text-anchor="middle"><tspan lang="en">prices for 10 derivatives</tspan><tspan lang="ko">파생상품 10개 가격</tspan></text>
+      </g>
+      <g class="node" data-id="sim" tabindex="0" role="button">
+        <rect class="box exch" x="40" y="190" width="150" height="52" rx="8"/>
+        <text class="t" x="115" y="212" text-anchor="middle">cb-sim</text>
+        <text class="s" x="115" y="230" text-anchor="middle"><tspan lang="en">bot traders, signing</tspan><tspan lang="ko">봇 트레이더, 서명</tspan></text>
+      </g>
+      <path class="edge" d="M190 146 C250 146 250 290 314 290" marker-end="url(#arr)"/>
+      <path class="edge" d="M190 216 C250 216 250 296 314 296" marker-end="url(#arr)"/>
+      <text class="l" x="40" y="262"><tspan lang="en">OraclePost / PlaceOrder</tspan><tspan lang="ko">OraclePost / PlaceOrder</tspan></text>
+
+      <!-- node -->
+      <rect class="box chain" x="300" y="234" width="420" height="300" rx="12" fill-opacity=".35"/>
+      <text class="t" x="316" y="256"><tspan lang="en">cb-node · the sequencer</tspan><tspan lang="ko">cb-node · 시퀀서</tspan></text>
+
+      <g class="node" data-id="rpc" tabindex="0" role="button">
+        <rect class="box chain" x="316" y="268" width="180" height="56" rx="8"/>
+        <text class="t" x="406" y="288" text-anchor="middle"><tspan lang="en">RPC worker pool</tspan><tspan lang="ko">RPC 워커 풀</tspan></text>
+        <text class="s" x="406" y="306" text-anchor="middle"><tspan lang="en">secp256k1 recover, N threads</tspan><tspan lang="ko">secp256k1 복구, 스레드 N개</tspan></text>
+      </g>
+      <g class="node" data-id="mempool" tabindex="0" role="button">
+        <rect class="box chain" x="524" y="268" width="180" height="56" rx="8"/>
+        <text class="t" x="614" y="288" text-anchor="middle"><tspan lang="en">Mempool</tspan><tspan lang="ko">멤풀</tspan></text>
+        <text class="s" x="614" y="306" text-anchor="middle"><tspan lang="en">in memory, hash order, per-sender</tspan><tspan lang="ko">메모리, 해시 순, 발신자별</tspan></text>
+      </g>
+      <path class="edge" d="M496 296 H522" marker-end="url(#arr)"/>
+
+      <g class="node" data-id="match" tabindex="0" role="button">
+        <rect class="box thread" x="316" y="352" width="388" height="78" rx="8"/>
+        <text class="t" x="330" y="374"><tspan lang="en">Matching thread (one core, memory only)</tspan><tspan lang="ko">매칭 스레드 (코어 1개, 메모리만)</tspan></text>
+        <text class="s" x="330" y="394"><tspan lang="en">drain → order_for_block → execute: SpotBook::place, accounts, funding</tspan><tspan lang="ko">드레인 → order_for_block → 실행: SpotBook::place, 계정, 펀딩</tspan></text>
+        <text class="s" x="330" y="412"><tspan lang="en">books and accounts carried block to block; rows moved into an overlay</tspan><tspan lang="ko">오더북과 계정은 블록 간 유지, 행은 오버레이로 이동</tspan></text>
+      </g>
+      <path class="edge" d="M614 324 V350" marker-end="url(#arr)"/>
+      <text class="l" x="606" y="342" text-anchor="end"><tspan lang="en">drain ≤ max_block_txs</tspan><tspan lang="ko">최대 max_block_txs 드레인</tspan></text>
+
+      <g class="node" data-id="writer" tabindex="0" role="button">
+        <rect class="box thread" x="316" y="456" width="388" height="64" rx="8"/>
+        <text class="t" x="330" y="478"><tspan lang="en">Writer thread (seals, in height order)</tspan><tspan lang="ko">라이터 스레드 (높이 순으로 봉인)</tspan></text>
+        <text class="s" x="330" y="498"><tspan lang="en">diff hash → state_root → tx_root → header → sign → encode → write → announce</tspan><tspan lang="ko">diff 해시 → state_root → tx_root → 헤더 → 서명 → 인코딩 → 쓰기 → 공지</tspan></text>
+      </g>
+      <path class="edge" d="M510 430 V454" marker-end="url(#arr)"/>
+      <text class="l" x="518" y="446"><tspan lang="en">hand off rows (moved, not copied)</tspan><tspan lang="ko">행 인계 (복사 아닌 이동)</tspan></text>
+
+      <!-- rocksdb -->
+      <g class="node" data-id="rocks" tabindex="0" role="button">
+        <rect class="box infra" x="760" y="456" width="170" height="64" rx="8"/>
+        <text class="t" x="845" y="478" text-anchor="middle">RocksDB</text>
+        <text class="s" x="845" y="496" text-anchor="middle"><tspan lang="en">written, not read, on the hot path</tspan><tspan lang="ko">핫 패스에서는 쓰기만, 읽기 없음</tspan></text>
+        <text class="s" x="845" y="512" text-anchor="middle"><tspan lang="en">one batch per block</tspan><tspan lang="ko">블록당 배치 하나</tspan></text>
+      </g>
+      <path class="edge" d="M704 488 H758" marker-end="url(#arr)"/>
+
+      <!-- replicas -->
+      <g class="node" data-id="replica" tabindex="0" role="button">
+        <rect class="box chain" x="760" y="268" width="170" height="70" rx="8"/>
+        <text class="t" x="845" y="290" text-anchor="middle"><tspan lang="en">Replicas ×N</tspan><tspan lang="ko">레플리카 ×N</tspan></text>
+        <text class="s" x="845" y="308" text-anchor="middle"><tspan lang="en">re-execute every block</tspan><tspan lang="ko">모든 블록 재실행</tspan></text>
+        <text class="s" x="845" y="324" text-anchor="middle"><tspan lang="en">halt on state_root mismatch</tspan><tspan lang="ko">state_root 불일치 시 정지</tspan></text>
+      </g>
+      <path class="edge stream" d="M720 488 C745 488 745 320 758 304" marker-end="url(#arr)"/>
+      <text class="l" x="760" y="432"><tspan lang="en">announce, fetch, catch-up</tspan><tspan lang="ko">공지, 가져오기, 따라잡기</tspan></text>
+
+      <!-- dashboard -->
+      <g class="node" data-id="dash" tabindex="0" role="button">
+        <rect class="box chain" x="760" y="360" width="170" height="52" rx="8"/>
+        <text class="t" x="845" y="382" text-anchor="middle">cb-dashboard</text>
+        <text class="s" x="845" y="400" text-anchor="middle"><tspan lang="en">HTTP, reads the durable view</tspan><tspan lang="ko">HTTP, 내구 뷰를 읽음</tspan></text>
+      </g>
+
+      <!-- ports -->
+      <g class="node" data-id="ports" tabindex="0" role="button">
+        <rect class="box infra" x="40" y="456" width="220" height="64" rx="8"/>
+        <text class="t" x="150" y="478" text-anchor="middle"><tspan lang="en">cb-ports · the seam</tspan><tspan lang="ko">cb-ports · 교체 지점</tspan></text>
+        <text class="s" x="150" y="496" text-anchor="middle"><tspan lang="en">bus, feed, custody, identity, clock</tspan><tspan lang="ko">버스, 피드, 수탁, 신원, 시계</tspan></text>
+        <text class="s" x="150" y="512" text-anchor="middle"><tspan lang="en">every backend behind a trait</tspan><tspan lang="ko">모든 백엔드는 트레이트 뒤에</tspan></text>
+      </g>
+      <text class="l" x="40" y="560"><tspan lang="en">Solid arrow: a request. Dashed arrow: a stream of blocks. Dashed box: a thread inside one process.</tspan><tspan lang="ko">실선 화살표: 요청. 점선 화살표: 블록 스트림. 점선 상자: 한 프로세스 안의 스레드.</tspan></text>
+    </svg>
+    </div>
+    <figcaption><span lang="en">The sequencer takes writes only. Every read a browser makes is answered by the gateway's mirror, which is fed by the block stream, so the matching thread never serves a query.</span><span lang="ko">시퀀서는 쓰기만 받습니다. 브라우저의 모든 읽기는 블록 스트림으로 채워지는 게이트웨이 미러가 답하므로, 매칭 스레드는 질의를 처리하지 않습니다.</span></figcaption>
+  </figure>
+  <div class="detail" id="mapdetail" aria-live="polite">
+    <h3><span lang="en">Select a component</span><span lang="ko">구성 요소를 선택하세요</span></h3>
+    <p><span lang="en">Each box names the crate that owns it and what it does on the order path.</span><span lang="ko">각 상자는 담당 크레이트와 주문 경로에서 하는 일을 설명합니다.</span></p>
+  </div>
+</section>
+
+<section id="path">
+  <div class="eyebrow"><span lang="en">The order's path</span><span lang="ko">주문의 경로</span></div>
+  <h2><span lang="en">A limit order, from a click to a fill on screen</span><span lang="ko">지정가 주문, 클릭에서 화면의 체결까지</span></h2>
+  <p><span lang="en">Drawn for the sequencer scheme. Under BFT (ADR 0008) the block-building step is a proposal the round's leader broadcasts; three of four validators vote, two consecutive certificates commit it, and every validator then executes the committed payload through the same executor and seal shown here.</span><span lang="ko">시퀀서 방식 기준으로 그렸습니다. BFT(ADR 0008)에서는 블록 생성 단계가 라운드 리더가 방송하는 제안이 되고, 검증자 넷 중 셋이 투표하며, 연속된 인증서 둘이 커밋합니다. 그 뒤 모든 검증자가 여기 그려진 것과 같은 실행기와 봉인을 거쳐 커밋된 페이로드를 실행합니다.</span></p>
+  <p><span lang="en">Click a step to open it; the matching component lights up on the map above.</span><span lang="ko">단계를 클릭하면 상세가 열리고, 위 지도에서 해당 구성 요소가 강조됩니다.</span></p>
+  <div class="steps" id="steps">
+    <button type="button" class="step" data-node="web" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who exch"><span lang="en">Browser</span><span lang="ko">브라우저</span></span><br><span class="what"><span lang="en">The ticket validates locally and sends the order over JSON</span><span lang="ko">주문표가 로컬에서 검증하고 JSON으로 주문을 보냅니다</span></span>
+      <span class="how"><p><span lang="en">The session was opened with a BIP-39 mnemonic: keys derive at <code>m/44'/60'/0'/0/i</code>, the address is EIP-55, and the login challenge is signed with EIP-191, so the same phrase opens the same account in MetaMask. A spot buy is checked against the free quote balance before it leaves the page.</span><span lang="ko">세션은 BIP-39 니모닉으로 열렸습니다. 키는 <code>m/44'/60'/0'/0/i</code>에서 파생되고 주소는 EIP-55, 로그인 챌린지는 EIP-191로 서명하므로 같은 문구로 MetaMask에서도 같은 계정이 열립니다. 현물 매수는 페이지를 떠나기 전에 가용 견적 잔고와 대조합니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="gw" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who exch"><span lang="en">Gateway</span><span lang="ko">게이트웨이</span></span><br><span class="what"><span lang="en">Signs the transaction with the account's custodial key and submits it over Cap'n Proto</span><span lang="ko">계정의 수탁 키로 트랜잭션에 서명하고 Cap'n Proto로 제출합니다</span></span>
+      <span class="how"><p><span lang="en">The gateway assigns the next nonce, primes its account mirror so the first balance change is not mistaken for a baseline, and records the order in its tracker. Nonces are pipelined within a block interval, which is why intra-block ordering keeps one sender's transactions together.</span><span lang="ko">게이트웨이는 다음 논스를 배정하고, 첫 잔고 변화가 기준선으로 오인되지 않도록 계정 미러를 준비한 뒤, 트래커에 주문을 기록합니다. 논스는 블록 간격 안에서 파이프라인되므로 블록 내 정렬은 한 발신자의 트랜잭션을 함께 묶습니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="rpc" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">RPC worker</span><span lang="ko">RPC 워커</span></span><br><span class="what"><span lang="en">Recovers the sender from the secp256k1 signature and admits the transaction</span><span lang="ko">secp256k1 서명에서 발신자를 복구하고 트랜잭션을 받아들입니다</span></span>
+      <span class="how"><p><span lang="en">Connections are pinned across a pool of worker runtimes, so recovery uses every core instead of the block builder's thread. High-S signatures are refused. The recovered sender is stored with the bytes as a <code>MempoolRecord</code>, so nothing downstream recovers it again. This step is the ceiling of the verified path: the one-connection runs, with one recovery core each side, land between 14,000 and 22,000 orders/s.</span><span lang="ko">연결은 워커 런타임 풀에 고정되므로 복구는 블록 빌더 스레드가 아니라 모든 코어를 씁니다. High-S 서명은 거부됩니다. 복구된 발신자는 바이트와 함께 <code>MempoolRecord</code>로 저장되어 이후 단계에서 다시 복구하지 않습니다. 이 단계가 검증 경로의 상한입니다. 양쪽에 복구 코어가 하나씩인 단일 연결 실행은 초당 14,000–22,000 주문 사이입니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="mempool" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">Mempool</span><span lang="ko">멤풀</span></span><br><span class="what"><span lang="en">Waits in memory, in hash order, in a per-sender queue</span><span lang="ko">메모리에서 해시 순, 발신자별 큐로 대기합니다</span></span>
+      <span class="how"><p><span lang="en">The mempool used to be a RocksDB column family and its drain cost grew with everything the node had ever processed. It is a map on the database handle now, and pending transactions do not survive a restart. That is what a mempool should be.</span><span lang="ko">멤풀은 원래 RocksDB 컬럼 패밀리였고 드레인 비용이 노드가 처리한 모든 것에 비례해 커졌습니다. 지금은 데이터베이스 핸들 위의 맵이며, 대기 트랜잭션은 재시작 후 사라집니다. 멤풀은 그래야 합니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="match" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">Sequencer loop</span><span lang="ko">시퀀서 루프</span></span><br><span class="what"><span lang="en">Cuts a block when the interval elapses or a full block is waiting</span><span lang="ko">간격이 지나거나 블록이 가득 차면 블록을 자릅니다</span></span>
+      <span class="how"><p><span lang="en">It drains up to <code>max_block_txs</code>, decodes the records in parallel, then appends the system transactions this height must carry, signed by the node itself: a <code>FundingTick</code> at each funding boundary, a settlement for each expired future. Before that existed every chain halted at height 3,600.</span><span lang="ko">최대 <code>max_block_txs</code>개를 드레인하고 레코드를 병렬로 디코딩한 뒤, 이 높이에 반드시 실려야 하는 시스템 트랜잭션을 노드 자신의 서명으로 덧붙입니다. 펀딩 경계마다 <code>FundingTick</code>, 만기된 선물마다 정산. 이것이 생기기 전에는 모든 체인이 높이 3,600에서 멈췄습니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="match" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">order_for_block</span><span lang="ko">order_for_block</span></span><br><span class="what"><span lang="en">Sorts: cancels, then post-only, then everything else; one sender's group stays in nonce order</span><span lang="ko">정렬: 취소, 그다음 post-only, 그다음 나머지. 한 발신자의 묶음은 논스 순서를 지킵니다</span></span>
+      <span class="how"><p><span lang="en">Accounts within a rank are permuted by <code>keccak(seed ‖ sender)</code> with the latest sealed head hash as the seed, so a low address is not a permanent priority. The key is computed once per sender per block. This is leader-local: replicas apply the order the block commits, so changing it is not a consensus change.</span><span lang="ko">같은 등급 안의 계정은 최근 봉인된 헤드 해시를 시드로 <code>keccak(seed ‖ sender)</code>로 뒤섞이므로 낮은 주소가 영구적 우선권을 갖지 않습니다. 키는 블록당 발신자마다 한 번 계산됩니다. 이는 리더 로컬입니다. 레플리카는 블록이 커밋한 순서를 적용하므로 이를 바꿔도 합의 변경이 아닙니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="match" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">Executor</span><span lang="ko">실행기</span></span><br><span class="what"><span lang="en">Savepoint, match in memory, move balances, commit point or roll back</span><span lang="ko">세이브포인트, 메모리 매칭, 잔고 이동, 커밋 포인트 또는 롤백</span></span>
+      <span class="how"><p><span lang="en"><code>SpotBook::place</code> walks two <code>BTreeMap</code>s keyed by (price, seq) and settles each fill into the maker's and taker's accounts. Books and accounts are carried from one block to the next; nothing is read from RocksDB. A failed transaction is rolled back to its savepoint and the block keeps the rest. Matching alone is 1.2 µs an order; the bookkeeping around it is where the time goes. A refused transaction is dropped from the block under the sequencer scheme and, since 2026-10-10, recorded and served on <code>streamRejected</code>; under BFT it stays in the block with <code>applied</code> false and consumes its nonce. Since ADR 0009 a maker fill that opens or increases exposure is revalidated against live margin, and a derivative fill needs a mark no older than 600 blocks.</span><span lang="ko"><code>SpotBook::place</code>는 (가격, seq)로 키를 잡은 <code>BTreeMap</code> 두 개를 따라가며 각 체결을 메이커와 테이커 계정에 정산합니다. 오더북과 계정은 블록 간에 유지되고, RocksDB에서 아무것도 읽지 않습니다. 실패한 트랜잭션은 세이브포인트로 되돌리고 블록은 나머지를 유지합니다. 매칭 자체는 주문당 1.2 µs이고, 시간은 주변 장부 처리에 쓰입니다. 거부된 트랜잭션은 시퀀서 방식에서는 블록에서 빠지고, 2026-10-10부터는 기록되어 <code>streamRejected</code>로 제공됩니다. BFT에서는 <code>applied</code>가 false인 채 블록에 남고 논스를 소비합니다. ADR 0009 이후 포지션을 열거나 늘리는 메이커 체결은 실시간 마진으로 재검증되며, 파생상품 체결에는 600블록 이내의 마크가 필요합니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="writer" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">Writer thread</span><span lang="ko">라이터 스레드</span></span><br><span class="what"><span lang="en">Seals the block: hash of the changes, header, signature, one RocksDB batch, then announces</span><span lang="ko">블록을 봉인합니다. 변경분 해시, 헤더, 서명, RocksDB 배치 하나, 그다음 공지</span></span>
+      <span class="how"><p><span lang="en">The matching thread moves the block's rows into an overlay and returns at once; handing off costs 0.2% of its time. The writer computes <code>state_root = sha256(domain ‖ prev_root ‖ sha256(changes in (cf, key) order))</code>, which covers accounts, orders, both book indexes, positions, margin, funding, oracle and the liquidation queue. Nothing is announced outside the process until the write returns. A crash loses at most eight blocks nobody was told about.</span><span lang="ko">매칭 스레드는 블록의 행을 오버레이로 옮기고 즉시 돌아갑니다. 인계 비용은 시간의 0.2%입니다. 라이터는 <code>state_root = sha256(domain ‖ prev_root ‖ sha256((cf, key) 순 변경분))</code>을 계산하며, 이는 계정, 주문, 두 오더북 인덱스, 포지션, 마진, 펀딩, 오라클, 청산 큐를 모두 덮습니다. 쓰기가 끝나기 전에는 프로세스 밖으로 아무것도 공지하지 않습니다. 충돌 시 아무에게도 알리지 않은 최대 8개 블록만 잃습니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="replica" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who chain"><span lang="en">Replicas</span><span lang="ko">레플리카</span></span><br><span class="what"><span lang="en">Fetch the announced block, recover every sender, re-execute, compare the root</span><span lang="ko">공지된 블록을 가져와 모든 발신자를 복구하고 재실행한 뒤 루트를 대조합니다</span></span>
+      <span class="how"><p><span lang="en">Gossip is announce-then-fetch over a peer-to-peer layer with seed peers, peer exchange and scoring. A replica forwards a block only after it accepted it, so "forward at most once" is structural. A modified block fails re-execution, which is why an unencrypted peer layer is survivable. A replica whose root differs halts at that block.</span><span lang="ko">가십은 시드 피어, 피어 교환, 점수제를 갖춘 P2P 계층에서 공지 후 가져오기 방식입니다. 레플리카는 블록을 받아들인 뒤에만 전달하므로 "최대 한 번 전달"이 구조적으로 보장됩니다. 변조된 블록은 재실행에 실패하므로 암호화되지 않은 피어 계층도 견딜 수 있습니다. 루트가 다른 레플리카는 그 블록에서 멈춥니다.</span></p></span></span>
+    </button>
+    <button type="button" class="step" data-node="gw" aria-expanded="false">
+      <span class="num"></span>
+      <span><span class="who exch"><span lang="en">Gateway mirror</span><span lang="ko">게이트웨이 미러</span></span><br><span class="what"><span lang="en">Reads the block from the stream, diffs each account against its baseline, pushes the fill over WebSocket</span><span lang="ko">스트림에서 블록을 읽고 계정마다 기준선과 비교해 체결을 WebSocket으로 밀어냅니다</span></span>
+      <span class="how"><p><span lang="en">The stream starts at the oldest body the node still holds and reads the head before the body, so a block that exists is never mistaken for a pruned one. The gateway calls itself synced only once it has reached the head. Balances, open orders and the book the browser sees all come from here. The gateway also follows <code>streamRejected</code>: an order the executor refused is marked rejected at once with the executor's reason, and the sender's cached nonce is dropped so the next order is signed against the chain. A refusal inside the 2 s confirm window is in the placement reply itself.</span><span lang="ko">스트림은 노드가 아직 보유한 가장 오래된 본문에서 시작하고 본문보다 헤드를 먼저 읽으므로, 존재하는 블록을 잘린 블록으로 오인하지 않습니다. 게이트웨이는 헤드에 도달했을 때만 동기화됐다고 말합니다. 브라우저가 보는 잔고, 미체결 주문, 오더북은 모두 여기서 옵니다. 게이트웨이는 <code>streamRejected</code>도 따라갑니다. 실행기가 거부한 주문은 거부 사유와 함께 즉시 rejected로 표시되고, 발신자의 캐시된 논스는 버려져 다음 주문은 체인 기준으로 서명됩니다. 2초 확인 창 안에 떨어진 거부는 주문 응답 자체에 담깁니다.</span></p></span></span>
+    </button>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="eyebrow"><span lang="en">Inside one block interval</span><span lang="ko">한 블록 간격 안에서</span></div>
+  <h2><span lang="en">The matching thread never waits for a disk</span><span lang="ko">매칭 스레드는 디스크를 기다리지 않습니다</span></h2>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 230" role="img" aria-label="Two lanes over time: the matching thread executes blocks N, N+1, N+2 back to back; the writer thread seals each one behind it, in height order, so the matching thread is always one or more blocks ahead of the disk.">
+      <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <text class="t" x="16" y="52"><tspan lang="en">Matching thread</tspan><tspan lang="ko">매칭 스레드</tspan></text>
+      <text class="t" x="16" y="152"><tspan lang="en">Writer thread</tspan><tspan lang="ko">라이터 스레드</tspan></text>
+      <line class="edge" x1="170" y1="200" x2="880" y2="200" marker-end="url(#arr2)"/>
+      <text class="l" x="170" y="220"><tspan lang="en">time → (one block ≈ 50–230 ms depending on the run)</tspan><tspan lang="ko">시간 → (블록 하나 ≈ 실행에 따라 50–230 ms)</tspan></text>
+
+      <rect class="box chain" x="170" y="30" width="200" height="40" rx="6"/>
+      <text x="270" y="55" text-anchor="middle"><tspan lang="en">execute block N</tspan><tspan lang="ko">블록 N 실행</tspan></text>
+      <rect class="box chain" x="380" y="30" width="200" height="40" rx="6"/>
+      <text x="480" y="55" text-anchor="middle"><tspan lang="en">execute block N+1</tspan><tspan lang="ko">블록 N+1 실행</tspan></text>
+      <rect class="box chain" x="590" y="30" width="200" height="40" rx="6"/>
+      <text x="690" y="55" text-anchor="middle"><tspan lang="en">execute block N+2</tspan><tspan lang="ko">블록 N+2 실행</tspan></text>
+
+      <path class="edge" d="M370 70 V128" marker-end="url(#arr2)"/>
+      <text class="l" x="376" y="100"><tspan lang="en">hand off, 0.2%</tspan><tspan lang="ko">인계, 0.2%</tspan></text>
+      <path class="edge" d="M580 70 V128" marker-end="url(#arr2)"/>
+      <path class="edge" d="M790 70 V128" marker-end="url(#arr2)"/>
+
+      <rect class="box infra" x="375" y="130" width="190" height="40" rx="6"/>
+      <text x="470" y="148" text-anchor="middle"><tspan lang="en">seal N: hash, header, sign</tspan><tspan lang="ko">N 봉인: 해시, 헤더, 서명</tspan></text>
+      <text class="s" x="470" y="163" text-anchor="middle"><tspan lang="en">RocksDB write, announce</tspan><tspan lang="ko">RocksDB 쓰기, 공지</tspan></text>
+      <rect class="box infra" x="585" y="130" width="190" height="40" rx="6"/>
+      <text x="680" y="148" text-anchor="middle"><tspan lang="en">seal N+1</tspan><tspan lang="ko">N+1 봉인</tspan></text>
+      <text class="s" x="680" y="163" text-anchor="middle"><tspan lang="en">carries prev root and hash</tspan><tspan lang="ko">이전 루트와 해시를 이어감</tspan></text>
+      <rect class="box infra" x="795" y="130" width="90" height="40" rx="6"/>
+      <text x="840" y="155" text-anchor="middle"><tspan lang="en">seal N+2</tspan><tspan lang="ko">N+2 봉인</tspan></text>
+
+      <text class="l" x="170" y="186"><tspan lang="en">overlay depth ≤ 8 blocks; readers see overlay first, then RocksDB</tspan><tspan lang="ko">오버레이 깊이 ≤ 8 블록. 읽기는 오버레이 먼저, 그다음 RocksDB</tspan></text>
+    </svg>
+    </div>
+    <figcaption><span lang="en">The synchronous path is the same two functions, <code>execute_block</code> then <code>seal_block</code>, on one thread. A test drains the pipelined chain block by block and checks it is byte for byte the synchronous one.</span><span lang="ko">동기 경로는 같은 두 함수 <code>execute_block</code>과 <code>seal_block</code>을 한 스레드에서 실행한 것입니다. 테스트는 파이프라인 체인을 블록 단위로 비우면서 동기 체인과 바이트 단위로 같은지 확인합니다.</span></figcaption>
+  </figure>
+</section>
+
+<section id="run">
+  <div class="eyebrow"><span lang="en">Three ways to run it</span><span lang="ko">실행하는 세 가지 방법</span></div>
+  <h2><span lang="en">Each target measures a different thing</span><span lang="ko">각 타깃은 서로 다른 것을 측정합니다</span></h2>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-start" aria-selected="true" aria-controls="panel-start">make start</button>
+    <button type="button" role="tab" id="tab-start2" aria-selected="false" aria-controls="panel-start2">make start2</button>
+    <button type="button" role="tab" id="tab-start3" aria-selected="false" aria-controls="panel-start3">make start3</button>
+    <button type="button" role="tab" id="tab-bench" aria-selected="false" aria-controls="panel-bench">make orderbench</button>
+  </div>
+  <div class="tabpanel" id="panel-start" role="tabpanel" aria-labelledby="tab-start">
+    <h3><span lang="en">The playable exchange</span><span lang="ko">플레이 가능한 거래소</span></h3>
+    <p><span lang="en">Node, gateway, oracle, web server and one bot trader at 20 orders/s. It measures nothing; the books move so a person can sign in with a phrase, claim the faucet, buy, sell, and watch a fill arrive. The gateway's simulation switch launches and kills bot populations from the admin page.</span><span lang="ko">노드, 게이트웨이, 오라클, 웹 서버와 초당 20주문의 봇 트레이더 하나. 아무것도 측정하지 않습니다. 오더북이 움직여서 사람이 문구로 로그인하고, 파우셋을 받고, 사고팔고, 체결이 도착하는 것을 볼 수 있습니다. 게이트웨이의 시뮬레이션 스위치는 관리자 페이지에서 봇 집단을 켜고 끕니다.</span></p>
+    <div class="fig">20 <span style="font-size:14px;color:var(--muted)"><span lang="en">orders/s, by design</span><span lang="ko">주문/s, 의도된 값</span></span></div>
+  </div>
+  <div class="tabpanel" id="panel-start2" role="tabpanel" aria-labelledby="tab-start2" hidden>
+    <h3><span lang="en">The block loop with nothing in front of it</span><span lang="ko">앞에 아무것도 없는 블록 루프</span></h3>
+    <p><span lang="en">The full stack plus the node's in-process generator: eight signing threads hand pre-verified orders straight to the sequencer with the sender attached. No signature is recovered and no RPC is crossed. The premise is the owner's: validation belongs to a risk engine ahead of this node. Everything after admission is real, including RocksDB on the writer and the gateway streaming blocks.</span><span lang="ko">전체 스택과 노드 내부 생성기. 서명 스레드 8개가 발신자가 붙은 사전 검증 주문을 시퀀서에 바로 넘깁니다. 서명 복구도 RPC도 없습니다. 검증은 이 노드 앞의 리스크 엔진 몫이라는 것이 소유자의 전제입니다. 수락 이후는 라이터의 RocksDB와 게이트웨이의 블록 스트리밍까지 모두 실제입니다.</span></p>
+    <div class="fig">221,586 <span style="font-size:14px;color:var(--muted)"><span lang="en">orders/s · 2026-09-21 · blocks of ~48,000 every 230 ms · signers and loop within 10% of each other</span><span lang="ko">주문/s · 2026-09-21 · 230 ms마다 약 48,000개 블록 · 서명기와 루프 차이 10% 이내</span></span></div>
+  </div>
+  <div class="tabpanel" id="panel-start3" role="tabpanel" aria-labelledby="tab-start3" hidden>
+    <h3><span lang="en">The whole path a client takes</span><span lang="ko">클라이언트가 지나는 전체 경로</span></h3>
+    <p><span lang="en">Six cb-sim workers sign real orders and send them over RPC; every signature is recovered on the worker pool. This is the product's number. The node sits near one core with the pool mostly idle and the mempool empty, so the clients on the same box are what stops it, not the node.</span><span lang="ko">cb-sim 워커 6개가 실제 주문에 서명해 RPC로 보내고, 모든 서명은 워커 풀에서 복구됩니다. 이것이 제품의 숫자입니다. 노드는 코어 하나 근처에 머물고 풀은 대부분 유휴, 멤풀은 비어 있으므로, 멈추게 하는 것은 노드가 아니라 같은 머신의 클라이언트입니다.</span></p>
+    <div class="fig">36,806 <span style="font-size:14px;color:var(--muted)"><span lang="en">orders/s with gateway, oracle and web alongside · 60,166 with only the node · 22,380 on one connection · 2026-09-21</span><span lang="ko">게이트웨이·오라클·웹 동반 시 주문/s · 노드만 있을 때 60,166 · 연결 하나 22,380 · 2026-09-21</span></span></div>
+  </div>
+  <div class="tabpanel" id="panel-bench" role="tabpanel" aria-labelledby="tab-bench" hidden>
+    <h3><span lang="en">The engine's ceiling</span><span lang="ko">엔진의 상한</span></h3>
+    <p><span lang="en">Matcher, executor, state commitment and commit, with 400,000 orders signed and queued before the window opens. 50/50 makers and takers, every taker crosses, zero rejected. The window closes when the last block is on disk. This is the figure ADR 0007 set against Hyperliquid's 200,000.</span><span lang="ko">매처, 실행기, 상태 커밋먼트, 커밋. 창이 열리기 전에 400,000개 주문을 서명해 큐에 넣습니다. 메이커·테이커 50/50, 모든 테이커가 교차, 거부 0. 창은 마지막 블록이 디스크에 닿을 때 닫힙니다. ADR 0007이 Hyperliquid의 200,000과 비교하려고 잡은 수치입니다.</span></p>
+    <div class="fig">413–417k / 206–208k <span style="font-size:14px;color:var(--muted)"><span lang="en">applied / matched orders/s at 100,000 accounts · 571–589k / 285–294k at 128 · 2026-09-23</span><span lang="ko">계정 10만 개에서 적용 / 체결 주문/s · 128개에서 571–589k / 285–294k · 2026-09-23</span></span></div>
+  </div>
+</section>
+
+<section id="cost">
+  <div class="eyebrow"><span lang="en">Where the block thread's time goes</span><span lang="ko">블록 스레드의 시간은 어디로 가는가</span></div>
+  <h2><span lang="en">Matching is a fifth. The rest is bookkeeping.</span><span lang="ko">매칭은 5분의 1. 나머지는 장부 처리.</span></h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th><span lang="en">Where</span><span lang="ko">위치</span></th><th><span lang="en">Share of the matching thread</span><span lang="ko">매칭 스레드 점유율</span></th><th></th><th><span lang="en">What it is</span><span lang="ko">무엇인가</span></th></tr></thead>
+    <tbody>
+      <tr><td><span lang="en">account load / put</span><span lang="ko">계정 load / put</span></td><td class="n">23%</td><td><div class="bar"><i style="width:23%"></i></div></td><td><span lang="en">clones of a <code>BTreeMap</code>-backed <code>AccountState</code> on every load</span><span lang="ko">load마다 <code>BTreeMap</code> 기반 <code>AccountState</code>를 복제</span></td></tr>
+      <tr><td><span lang="en">matching</span><span lang="ko">매칭</span></td><td class="n">18%</td><td><div class="bar"><i style="width:18%"></i></div></td><td><span lang="en"><code>SpotBook::place</code>: three tree operations per fill with 32-byte keys</span><span lang="ko"><code>SpotBook::place</code>: 체결당 32바이트 키의 트리 연산 3회</span></td></tr>
+      <tr><td><span lang="en">commit</span><span lang="ko">커밋</span></td><td class="n">17%</td><td><div class="bar"><i style="width:17%"></i></div></td><td><span lang="en">the SHA-256 diff and batch assembly, now measured before sealing left the thread</span><span lang="ko">SHA-256 diff와 배치 조립. 봉인이 스레드를 떠나기 전 측정</span></td></tr>
+      <tr><td><span lang="en">keccak</span><span lang="ko">keccak</span></td><td class="n">10%</td><td><div class="bar"><i style="width:10%"></i></div></td><td><span lang="en">ordering keys, one per sender per block, and <code>tx_root</code></span><span lang="ko">정렬 키(블록당 발신자마다 하나)와 <code>tx_root</code></span></td></tr>
+      <tr><td><span lang="en">SipHash</span><span lang="ko">SipHash</span></td><td class="n">6.5%</td><td><div class="bar"><i style="width:6.5%"></i></div></td><td><span lang="en">the per-block maps; since replaced by Fx hashing</span><span lang="ko">블록별 맵. 이후 Fx 해싱으로 교체됨</span></td></tr>
+    </tbody>
+  </table></div>
+  <p style="font-size:13.5px;color:var(--muted)"><span lang="en">macOS <code>sample</code> over <code>make orderbench</code>, 100,000 accounts, 2026-09-23, taken before the Fx change and before sealing moved to the writer. Shares are of the matching thread, not of the process.</span><span lang="ko">macOS <code>sample</code>, <code>make orderbench</code>, 계정 10만 개, 2026-09-23. Fx 변경 전, 봉인이 라이터로 옮겨지기 전 측정. 점유율은 프로세스가 아니라 매칭 스레드 기준.</span></p>
+</section>
+
+<section id="levers">
+  <div class="eyebrow"><span lang="en">Room left for speed</span><span lang="ko">남은 속도 여지</span></div>
+  <h2><span lang="en">Ranked by what the code and the profile show</span><span lang="ko">코드와 프로파일이 보여주는 순서대로</span></h2>
+  <p><span lang="en">Two paths, two ceilings. The engine path (pre-signed) is already past Hyperliquid's published number. The verified path (real signatures) is a quarter of it, and that is the one a client experiences.</span><span lang="ko">경로 둘, 상한 둘. 엔진 경로(서명 사전 완료)는 이미 Hyperliquid의 공개 수치를 넘었습니다. 검증 경로(실제 서명)는 그 4분의 1이고, 클라이언트가 체감하는 것은 이쪽입니다.</span></p>
+  <div class="levers">
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Call <code>preload_state</code> from the sequencer</span><span lang="ko">시퀀서에서 <code>preload_state</code> 호출</span><span class="tag eng">engine</span></h3><p><span lang="en">Only the benchmark calls it today. The node's first blocks after a restart still fault accounts and books in one at a time. It is written; it needs wiring, and positions, margin and perp books adding to it.</span><span lang="ko">지금은 벤치마크만 호출합니다. 재시작 후 노드의 첫 블록들은 여전히 계정과 오더북을 하나씩 불러옵니다. 코드는 있으니 연결만 하면 되고, 포지션·마진·무기한 오더북을 추가해야 합니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">A release profile: LTO, one codegen unit</span><span lang="ko">릴리스 프로파일: LTO, codegen unit 하나</span><span class="tag eng">engine</span><span class="tag ver">verified</span></h3><p><span lang="en">The workspace has no <code>[profile.release]</code> at all. Cross-crate inlining between cb-engine, cb-block and cb-state is left on the table. Needs <code>capnp</code> on the PATH because the profile change re-runs the schema build.</span><span lang="ko">워크스페이스에 <code>[profile.release]</code>가 전혀 없습니다. cb-engine, cb-block, cb-state 간 크레이트 경계 인라이닝을 놓치고 있습니다. 프로파일 변경이 스키마 빌드를 다시 돌리므로 PATH에 <code>capnp</code>가 필요합니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Dense accounts, no clone per load</span><span lang="ko">밀집 계정 구조, load마다 복제 없음</span><span class="tag eng">engine</span></h3><p><span lang="en">Balances are two <code>BTreeMap&lt;u8, u128&gt;</code> and <code>BlockState::load</code> clones the whole struct every call. Eight assets fit a fixed array; an undo journal of (address, asset, old value) replaces the copies. This is the largest single share, 23%.</span><span lang="ko">잔고는 <code>BTreeMap&lt;u8, u128&gt;</code> 두 개이고 <code>BlockState::load</code>는 호출마다 구조체 전체를 복제합니다. 자산 8개는 고정 배열에 들어가고, (주소, 자산, 이전 값) 되돌리기 저널이 복사를 대체합니다. 가장 큰 단일 항목, 23%입니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Keep <code>VerifiedTx</code> in the mempool, not bytes</span><span lang="ko">멤풀에 바이트가 아니라 <code>VerifiedTx</code>를 보관</span><span class="tag ver">verified</span></h3><p><span lang="en">The RPC worker decodes and recovers, then re-encodes to a <code>MempoolRecord</code>; the sequencer clones every blob, decodes it again, and deletes each hash one by one. The mempool is in memory now, so it can hold the decoded value and the loop can take the batch by move.</span><span lang="ko">RPC 워커가 디코딩하고 복구한 뒤 <code>MempoolRecord</code>로 다시 인코딩하고, 시퀀서는 모든 블롭을 복제해 다시 디코딩하고 해시를 하나씩 지웁니다. 멤풀은 이제 메모리에 있으니 디코딩된 값을 그대로 담고, 루프는 배치를 이동으로 가져갈 수 있습니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">A price-level ladder with a slab for resting orders</span><span lang="ko">가격 레벨 사다리와 대기 주문 슬랩</span><span class="tag eng">engine</span></h3><p><span lang="en">Each fill does a lookup in <code>BTreeMap&lt;(price, seq), H256&gt;</code>, then in <code>BTreeMap&lt;H256, RestingOrder&gt;</code>, then a delete in each. A ladder of price levels holding a queue of <code>u32</code> slab handles makes the best level a pointer and a fill a pop. It is a consensus-neutral change if the fill sequence is preserved, and the determinism test already checks that.</span><span lang="ko">체결마다 <code>BTreeMap&lt;(price, seq), H256&gt;</code> 조회, <code>BTreeMap&lt;H256, RestingOrder&gt;</code> 조회, 그리고 각각 삭제를 합니다. <code>u32</code> 슬랩 핸들 큐를 가진 가격 레벨 사다리로 바꾸면 최우선 레벨은 포인터 하나, 체결은 pop 하나가 됩니다. 체결 순서만 보존하면 합의에 중립인 변경이며, 결정성 테스트가 이미 그것을 확인합니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">A cheaper permutation in <code>order_for_block</code></span><span lang="ko"><code>order_for_block</code>의 더 싼 순열</span><span class="tag eng">engine</span></h3><p><span lang="en">One keccak per sender per block is leader-local by the file's own comment. A keyed 64-bit hash gives the same "nobody can choose it" property at a fraction of the cost. Keccak was 10% of the thread including <code>tx_root</code>, which has since moved to the writer.</span><span lang="ko">블록당 발신자마다 keccak 한 번은 파일의 주석대로 리더 로컬입니다. 키가 있는 64비트 해시로도 "누구도 고를 수 없다"는 성질은 같고 비용은 몇 분의 1입니다. keccak은 <code>tx_root</code>를 포함해 스레드의 10%였고, <code>tx_root</code>는 이후 라이터로 옮겨졌습니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Order rows written once per block; a block journal as the durability point</span><span lang="ko">주문 행은 블록당 한 번 쓰기, 블록 저널을 내구성 지점으로</span><span class="tag eng">engine</span></h3><p><span lang="en">Both are on ADR 0007's list and not started. The first removes a put and a delete per mutation in favour of the book's final state. The second makes RocksDB a lagging checkpoint and recovery a replay from the journal, so the writer stops being paced by RocksDB at all.</span><span lang="ko">둘 다 ADR 0007 목록에 있고 시작 전입니다. 첫째는 변경마다 put과 delete 대신 오더북의 최종 상태만 씁니다. 둘째는 RocksDB를 뒤따르는 체크포인트로, 복구를 저널 재생으로 바꿔 라이터가 RocksDB 속도에 묶이지 않게 합니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Give signature recovery its own machines</span><span lang="ko">서명 복구에 전용 머신을</span><span class="tag ver">verified</span></h3><p><span lang="en">Recovery already uses the C secp256k1 library, so there is no crate to swap. The gap from 36,806 to 60,166 orders/s came from taking the gateway, oracle and web off the box; it is a cores problem before it is a code problem. The design the owner named, a risk engine ahead of the sequencer, is a tier of verifiers that scales sideways and forwards <code>VerifiedTx</code>.</span><span lang="ko">복구는 이미 C secp256k1 라이브러리를 쓰므로 바꿀 크레이트가 없습니다. 36,806에서 60,166 주문/s로의 차이는 게이트웨이·오라클·웹을 머신에서 뺀 것만으로 생겼습니다. 코드 문제이기 전에 코어 문제입니다. 소유자가 말한 설계, 시퀀서 앞의 리스크 엔진은 수평으로 늘어나며 <code>VerifiedTx</code>를 전달하는 검증 계층입니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">Shorter blocks, now that sealing is off the thread</span><span lang="ko">봉인이 스레드를 떠났으니 더 짧은 블록</span><span class="tag lat">latency</span></h3><p><span lang="en">The loaded runs cut blocks of 48,000 orders every 230 ms. Submit-to-fill is mostly waiting for the next cut. The per-block fixed cost that once argued for big blocks now runs on the writer, so the interval can come down toward Hyperliquid's ~70 ms. A trade-off to measure, not a defect.</span><span lang="ko">부하 실행은 230 ms마다 48,000개 주문 블록을 자릅니다. 제출→체결 시간은 대부분 다음 자르기를 기다리는 시간입니다. 큰 블록의 근거였던 블록당 고정 비용은 이제 라이터에서 돌아가므로, 간격을 Hyperliquid의 약 70 ms 쪽으로 내릴 수 있습니다. 측정할 트레이드오프이지 결함이 아닙니다.</span></p></div></div>
+    <div class="lever"><span class="k"></span><div><h3><span lang="en">A validator rejoining under sustained load</span><span lang="ko">부하가 계속되는 중에 다시 합류하는 검증자</span><span class="tag eng">engine</span></h3><p><span lang="en">BFT ordering is in (ADR 0008): rounds, votes, timeout certificates, leader reputation, execution after commit. A validator killed and restarted on a quiet chain syncs the blocks it missed and votes again within seconds. Restarted while 20,000 orders/s keep coming, it syncs and stays consistent but, on a machine it shares with three other validators and the load generator, had not resumed voting when a 75 s window ended: the tip moves faster than a quarter of one chip can re-verify. A machine of its own is the expected fix; it is not measured.</span><span lang="ko">BFT 순서 결정이 들어왔습니다(ADR 0008): 라운드, 투표, 타임아웃 인증서, 리더 평판, 커밋 뒤 실행. 조용한 체인에서 죽였다 되살린 검증자는 놓친 블록을 동기화하고 몇 초 안에 다시 투표합니다. 초당 20,000 주문이 계속 들어오는 중에 되살리면 동기화하고 일관성은 지키지만, 다른 검증자 셋과 부하 생성기와 머신을 나눠 쓰는 상태에서는 75초 창이 끝날 때까지 투표를 재개하지 못했습니다. 칩 4분의 1로 재검증하는 속도보다 끝이 빨리 움직입니다. 전용 머신이 예상되는 해법이며, 측정하지는 않았습니다.</span></p></div></div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="eyebrow"><span lang="en">Read this before comparing numbers</span><span lang="ko">숫자를 비교하기 전에 읽을 것</span></div>
+  <h2><span lang="en">What the design gives up, in its own words</span><span lang="ko">설계가 포기한 것, 있는 그대로</span></h2>
+  <div class="callout">
+    <h3><span lang="en">"Decentralized" now describes the ordering, with one honest caveat</span><span lang="ko">"탈중앙"은 이제 순서 결정을 설명하는 말입니다, 한 가지 솔직한 단서와 함께</span></h3>
+    <p><span lang="en">Four validators order every block by quorum; one may lie or die and the chain continues, measured with one killed under load. Every validator verifies every signature and executes every committed payload, and audits the others' executed roots two blocks later. What the numbers leave out: all four validators ran on one machine, so the commit latencies have no network in them, and the committed rate is capped by four copies of signature recovery sharing eighteen cores rather than by the protocol. Hyperliquid's 200,000 orders/s is a many-validator figure on dedicated hardware. Equivocation is logged, not slashed, and the validator set is fixed at genesis.</span><span lang="ko">검증자 넷이 모든 블록의 순서를 정족수로 정합니다. 하나가 거짓말하거나 죽어도 체인은 이어지며, 부하 중에 하나를 죽여 측정했습니다. 모든 검증자가 모든 서명을 검증하고 커밋된 모든 페이로드를 실행하며, 두 블록 뒤에 서로의 실행 루트를 감사합니다. 숫자가 빠뜨린 것: 검증자 넷이 모두 한 머신에서 돌았으므로 커밋 지연에는 네트워크가 없고, 커밋 속도는 프로토콜이 아니라 18코어를 나눠 쓰는 서명 복구 네 벌에 묶여 있습니다. Hyperliquid의 200,000 주문/s는 전용 하드웨어 위 다수 검증자의 수치입니다. 이중 제안은 기록만 되고 슬래싱되지 않으며, 검증자 집합은 제네시스에 고정됩니다.</span></p>
+  </div>
+  <ul class="plain">
+    <li><span lang="en"><strong>No inclusion proofs and no checkable snapshots.</strong> The hash chain replaced the merkle tries. A new node replays from genesis or trusts its source. architecture.md §2.5 still describes the four merkle tries; the README and the atlas below follow the code.</span><span lang="ko"><strong>포함 증명도, 검증 가능한 스냅샷도 없습니다.</strong> 해시 체인이 머클 트라이를 대체했습니다. 새 노드는 제네시스부터 재생하거나 출처를 신뢰합니다. architecture.md §2.5는 여전히 머클 트라이 넷을 설명합니다. README와 아래 지도는 코드를 따릅니다.</span></li>
+    <li><span lang="en"><strong>Latency numbers have a quorum in them now, but no network.</strong> A 5 ms p50 from proposal to commit across four validators on one machine and a 0.1–0.2 s median at Hyperliquid across a real network are not the same measurement; each network hop adds its round trip.</span><span lang="ko"><strong>지연 수치에 이제 정족수는 있지만 네트워크는 없습니다.</strong> 한 머신의 검증자 넷 사이 제안→커밋 p50 5 ms와 실제 네트워크 위 Hyperliquid의 중앙값 0.1–0.2초는 같은 측정이 아닙니다. 네트워크 홉마다 왕복 시간이 더해집니다.</span></li>
+    <li><span lang="en"><strong>Every engine figure is pre-signed.</strong> The verified path is the product, and it is bound by cores spent on secp256k1 recovery.</span><span lang="ko"><strong>모든 엔진 수치는 서명 사전 완료입니다.</strong> 검증 경로가 제품이며, secp256k1 복구에 쓰는 코어 수에 묶여 있습니다.</span></li>
+    <li><span lang="en"><strong>Gateway state does not survive a restart:</strong> order tracker, account mirror, suspensions, sessions, transfer memos.</span><span lang="ko"><strong>게이트웨이 상태는 재시작을 견디지 못합니다.</strong> 주문 트래커, 계정 미러, 정지 목록, 세션, 이체 메모.</span></li>
+    <li><span lang="en"><strong>Still open on the exchange side:</strong> <code>AdjustMargin</code> is unsupported in the executor, so a gateway-created account cannot trade a derivative; no halt transaction. Lot size is enforced; the configured per-market margin, leverage and notional caps are enforced since ADR 0009 (2026-09-30).</span><span lang="ko"><strong>거래소 쪽에 아직 열린 것:</strong> 실행기가 <code>AdjustMargin</code>을 지원하지 않아 게이트웨이가 만든 계정은 파생상품을 거래할 수 없습니다. 중지 트랜잭션 없음. 로트 크기는 적용됩니다. 설정된 시장별 마진·레버리지·명목 상한은 ADR 0009(2026-09-30)부터 적용됩니다.</span></li>
+    <li><span lang="en"><strong>A chain is one version from genesis.</strong> Block identity is <code>CB-BLOCK-ID-V2</code> since ADR 0009, so a database from before it cannot continue; <code>make startbft</code> wipes <code>rust/data-bft</code> and <code>make start2</code> wipes <code>rust/data</code> for that reason.</span><span lang="ko"><strong>체인은 제네시스부터 한 버전입니다.</strong> ADR 0009 이후 블록 식별자는 <code>CB-BLOCK-ID-V2</code>이므로 그 이전의 데이터베이스는 이어갈 수 없습니다. 그래서 <code>make startbft</code>는 <code>rust/data-bft</code>를, <code>make start2</code>는 <code>rust/data</code>를 지웁니다.</span></li>
+  </ul>
+</section>
+
+<footer>
+  <span lang="en">Sources: docs/STATUS.md, docs/performance.md, CHANGELOG.md, docs/adr/0007–0009, and the code at commit ca88db7 (2026-10-10). Every figure names what it measures and when. One machine per figure: an Apple M4 with ten cores for the sequencer runs, an M5 Max with eighteen for the BFT and stress runs, release builds.</span>
+  <span lang="ko">출처: docs/STATUS.md, docs/performance.md, CHANGELOG.md, docs/adr/0007–0009, 커밋 ca88db7 (2026-10-10) 시점의 코드. 모든 수치는 무엇을 언제 측정했는지 명시합니다. 수치마다 머신 하나: 시퀀서 실행은 코어 10개 Apple M4, BFT와 스트레스 실행은 코어 18개 M5 Max, 릴리스 빌드.</span>
+</footer>
+</div>
+
+
+</div>
+
+<div id="doc-atlas" class="doc" hidden>
+
+
+
+
+<nav class="tabs" aria-label="Views">
+  <div class="wrap" role="tablist">
+    <button role="tab" id="m-tab-arch" aria-controls="m-view-arch" aria-selected="true">Architecture</button>
+    <button role="tab" id="m-tab-flow" aria-controls="m-view-flow" aria-selected="false">Transaction flow</button>
+    <button role="tab" id="m-tab-lang" aria-controls="m-view-lang" aria-selected="false">Languages &amp; protocols</button>
+    <button role="tab" id="m-tab-threads" aria-controls="m-view-threads" aria-selected="false">Threads &amp; throughput</button>
+    <button role="tab" id="m-tab-db" aria-controls="m-view-db" aria-selected="false">Storage</button>
+  </div>
+</nav>
+
+<!-- ============================ ARCHITECTURE ============================ -->
+<section class="view" id="m-view-arch" role="tabpanel" aria-labelledby="m-tab-arch">
+  <div class="wrap">
+    <h2>Two spines and a seam</h2>
+    <p class="lede" style="margin-top:6px">Twenty-five workspace crates plus the browser app. The chain spine is pure Rust down to RocksDB; the exchange layer talks to it only through Cap'n Proto RPC and swaps its own storage, bus and feeds behind the <code>cb-ports</code> traits. Click a crate to see what it does and what it pulls in.</p>
+    <div class="legend"><span style="--c:var(--chain)">Chain (L1) spine</span><span style="--c:var(--exch)">Exchange layer</span><span style="--c:var(--infra)">Replaceable infrastructure &amp; tooling</span></div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="panel"><div class="pad diagram-scroll">
+        <figure>
+          <svg id="m-cratemap" viewBox="0 0 860 560" role="img" aria-label="Crate dependency map: the chain spine from cb-types to cb-node on the left, the exchange layer from cb-ports to cb-gateway and cb-web on the right, tooling crates below" style="min-width:560px">
+            <defs><marker id="m-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g id="m-edges"></g>
+            <g id="m-bands"></g>
+            <g id="m-crates"></g>
+          </svg>
+          <figcaption>Arrows point from a crate to what it depends on. Selecting a crate lights its dependencies in teal and the crates that depend on it in amber.</figcaption>
+        </figure>
+      </div></div>
+      <aside class="panel detail" id="m-crate-detail" aria-live="polite"><div class="pad">
+        <span class="tag l1">Chain spine</span>
+        <h3>cb-block</h3>
+        <p>Block production and execution: <code>build_and_apply</code>, the executor that applies every transaction body, intra-block ordering, and the buffered <code>BlockState</code> that flushes to RocksDB in one batch.</p>
+        <dl><dt>Path</dt><dd class="path">rust/crates/cb-block</dd><dt>Depends on</dt><dd class="chips"></dd><dt>Used by</dt><dd class="chips"></dd></dl>
+      </div></aside>
+    </div>
+
+    <h2 style="margin-top:36px">What runs, and where it listens</h2>
+    <p class="lede" style="margin-top:6px">Every port comes from the two Makefiles. Only the node speaks Cap'n Proto to the outside; everything the browser sees is JSON and WebSocket from the gateway.</p>
+    <div class="panel tablewrap" style="margin-top:14px"><table>
+      <thead><tr><th>Process</th><th class="mono">Binds</th><th>Speaks</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><b>cb-node</b> sequencer</td><td class="mono">127.0.0.1:7700<br>127.0.0.1:8080</td><td>Cap'n Proto RPC server (7700); axum HTTP dashboard in-process (8080)</td><td>The chain. Drains the mempool every 100 ms under <code>make start</code>, builds and signs blocks, serves streams to replicas and the gateway.</td></tr>
+        <tr><td><b>cb-node</b> replica</td><td class="mono">dashboards 18081, 18082</td><td>Dials the sequencer's 7700; <code>submitVote</code> back</td><td>Two replicas in the supervisord cluster. Default fast-mirror stores block bytes without executing; <code>--strict-sync</code> re-executes and compares the state root.</td></tr>
+        <tr><td><b>cb-gateway</b></td><td class="mono">127.0.0.1:8081</td><td>REST <code>/api/v1/*</code>, <code>/ws</code>, <code>/health</code>; Cap'n Proto client to 7700</td><td>Translator and custodian: sessions, faucet, candles, leaderboard, admin. Signs chain transactions with a key derived per login address.</td></tr>
+        <tr><td><b>cb-oracle</b></td><td class="mono">127.0.0.1:8171</td><td>HTTP <code>/scenario</code> control; Cap'n Proto client to 7700</td><td>Publishes one signed <code>OracleUpdate</code> per derivative market per second. Without it no perpetual or future has a mark price.</td></tr>
+        <tr><td><b>cb-web</b></td><td class="mono">127.0.0.1:3000</td><td>Static WebAssembly bundle over HTTP; JSON and WebSocket to 8081</td><td>The Leptos trading terminal. Served by <code>scripts/serve_web.py</code> with SPA fallback, or <code>trunk serve</code> in development.</td></tr>
+        <tr><td><b>cb-sim</b>, <b>cb-simgame</b>, <b>cb-client</b></td><td class="mono">—</td><td>Cap'n Proto clients to 7700</td><td>Load generator (buyers, sellers, transfers), invariant-checking bot exchange, and a REPL wallet.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============================ FLOW ============================ -->
+<section class="view" id="m-view-flow" role="tabpanel" aria-labelledby="m-tab-flow" hidden>
+  <div class="wrap">
+    <h2>A limit order, from the browser to the state root</h2>
+    <p class="lede" style="margin-top:6px">Drawn for the sequencer scheme. Under BFT (ADR 0008) the block-building step is a <em>proposal</em> the round's leader broadcasts; three of four validators vote, two consecutive certificates commit it, and every validator then executes the committed payload through the same executor and seal shown here. Signature recovery happens once per validator, at admission.</p>
+    <p class="lede" style="margin-top:6px">Ten stops. Step through them; the drawing follows. The two verification points and the one place a transaction can be dropped are marked.</p>
+    <div class="grid2" style="margin-top:16px">
+      <div>
+        <div class="panel"><div class="pad diagram-scroll">
+          <figure>
+            <svg id="m-flowmap" viewBox="0 0 860 420" role="img" aria-label="Transaction path: browser to gateway to node RPC admission to mempool to sequencer to executor to the hash chain and state root, then block header and the return leg to the browser" style="min-width:620px">
+              <defs><marker id="m-farr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+              <g id="m-fedges"></g><g id="m-fnodes"></g><g id="m-flabels"></g>
+            </svg>
+            <figcaption id="m-flowcap">Stop 1 of 10.</figcaption>
+          </figure>
+          <div class="stepbar">
+            <button class="btn" id="m-prev">← Back</button>
+            <button class="btn primary" id="m-next">Next stop →</button>
+            <span style="font-size:13px;color:var(--muted)">or click a stop in the list</span>
+          </div>
+        </div></div>
+        <div class="kv">
+          <div class="cell"><b>100 ms</b><span>block interval under <code>make start</code>; the binary default is 1000 ms, the cluster and bench use 50 ms</span></div>
+          <div class="cell"><b>10,000</b><span>transactions the sequencer will drain into one block at most</span></div>
+          <div class="cell"><b>2 s</b><span>how long <code>POST /orders</code> waits for the block carrying the order before answering</span></div>
+          <div class="cell"><b>32 B</b><span>the state root: a SHA-256 chain over the rows each block changed, fifteen column families (ADR 0007)</span></div>
+        </div>
+        <div class="callout">The browser never signs a chain transaction. It signs an EIP-191 login challenge; the gateway derives a trading key from its server secret and the login address, and signs on the user's behalf. Direct RPC clients such as <code>cb-client</code> and <code>cb-sim</code> sign for themselves.</div>
+      </div>
+      <div class="steps" id="m-steps"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ LANGUAGES ============================ -->
+<section class="view" id="m-view-lang" role="tabpanel" aria-labelledby="m-tab-lang" hidden>
+  <div class="wrap">
+    <h2>Languages, protocols and the crypto underneath</h2>
+    <p class="lede" style="margin-top:6px">One language end to end. Rust on the server, Rust compiled to WebAssembly in the browser, Cap'n Proto between processes, and Python only for scripts that drive the stack.</p>
+    <div class="cards" style="margin-top:16px">
+      <div class="card"><div class="eyebrow">Server</div><h3>Rust, edition 2021, MSRV 1.85</h3><ul>
+        <li><b>tokio</b> async runtime; the RPC server is one <code>LocalSet</code> on one thread</li>
+        <li><b>axum 0.7</b> for the gateway REST/WS and the node dashboard</li>
+        <li><b>capnp 0.20</b> and <b>capnp-rpc</b> for node RPC</li>
+        <li><b>rocksdb 0.22</b> in the node, <b>sqlx 0.8</b> (SQLite) in the gateway</li>
+        <li><b>rust_decimal</b> for every money value at the API edge; fixed-point <code>u128</code> on chain</li>
+        <li><b>secp256k1 0.29</b>, <b>tiny-keccak</b>, <b>rayon</b> for parallel signature recovery on sync</li>
+      </ul></div>
+      <div class="card"><div class="eyebrow">Browser</div><h3>Leptos 0.8, client-side rendered, built by trunk</h3><ul>
+        <li>Outside the workspace; target <code>wasm32-unknown-unknown</code>, <code>wasm-opt=z</code></li>
+        <li>Crypto in the browser: <b>k256</b>, <b>sha3</b>, <b>bip39</b>, <b>bip32</b>; randomness via <code>getrandom</code>'s js backend</li>
+        <li>Money is <code>rust_decimal::Decimal</code> end to end; the only floats are canvas pixel math</li>
+        <li><b>No JavaScript</b> is written by hand anywhere in the repository</li>
+        <li>First visit needs <code>?gateway=live&amp;api=…</code>; the app otherwise renders fixture data</li>
+      </ul></div>
+      <div class="card"><div class="eyebrow">Identity</div><h3>BIP-39 phrase → BIP-44 path → Ethereum address</h3><ul>
+        <li>Path <code>m/44'/60'/0'/0/{index}</code>, EIP-55 checksummed address</li>
+        <li>Login is EIP-191 <code>personal_sign</code> over a server-issued challenge</li>
+        <li>The same phrase opens the same account in any EVM wallet</li>
+        <li>The operator role is bound to an address the gateway is started with, never to a name</li>
+        <li>Pinned vector: the all-zero-entropy phrase at index 0 → <code>0x9858…da94</code></li>
+      </ul></div>
+      <div class="card"><div class="eyebrow">Signing on chain</div><h3>Recoverable ECDSA with domain separation</h3><ul>
+        <li>Transaction hash: <code>keccak256("CB-TX\0" ‖ bincode(tx))</code>, low-S enforced</li>
+        <li>Block header signed over <code>"CB-BLOCK\0" ‖ bincode(header)</code>; votes carry their own tag</li>
+        <li>The sender is recovered once at RPC admission and cached in the mempool record</li>
+        <li>A replica in strict sync recovers every sender again before trusting a block</li>
+      </ul></div>
+      <div class="card"><div class="eyebrow">Scripts</div><h3>Python, for driving the stack</h3><ul>
+        <li><code>serve_web.py</code>: loopback static server with SPA fallback</li>
+        <li><code>client_trade_smoke.py</code>, <code>perps_test.py</code>, <code>blockchain_test.py</code>: end-to-end smokes over <code>cb-client</code></li>
+        <li><code>print_status.py</code>, <code>multi_sim_summary.py</code>: format dashboard JSON for <code>make status</code></li>
+        <li><code>supervisord/*.py</code>: bring up, verify and tear down the three-node cluster</li>
+      </ul></div>
+      <div class="card"><div class="eyebrow">Consensus</div><h3>Chained HotStuff over four validators (ADR 0008)</h3><ul>
+        <li>Rounds with a rotating leader; a quorum certificate or a timeout certificate ends each round; two consecutive certificates commit. Quorum is 3 of 4, tolerating one Byzantine validator</li>
+        <li>Consensus orders, execution follows: committed payloads execute on every validator; an executed block carries its proposal and certificate in <code>parent_qc</code> as a finality proof</li>
+        <li>Leader reputation benches a validator whose round timed out; a restarted validator rejoins from its executed head, by proposal requests or by block sync</li>
+        <li>ADR 0009 (2026-09-30): block identity is <code>keccak256("CB-BLOCK-ID-V2\0" ‖ bincode((height, prev_hash, tx_root, state_root, timestamp, view)))</code>, signatures and certificates excluded; a refused transaction stays in a BFT block with <code>applied</code> false and consumes its nonce; a mark older than 600 blocks refuses trading and liquidation but not cancels</li>
+        <li>The sequencer scheme (<code>make start</code>): one proposer fixed at genesis, replicas attest with 2-of-3 votes, a follower takes over a dead leader; crash faults only</li>
+        <li><code>cb-net</code> adds a gossip mesh with peer scoring; the engine holds no database and cannot adopt a block itself</li>
+      </ul></div>
+    </div>
+
+    <h2 style="margin-top:36px">The Cap'n Proto interface</h2>
+    <p class="lede" style="margin-top:6px">Five schema files in <code>rust/crates/cb-schema/schema/</code>. The node interface has twenty-two methods; the teal ones return a subscription that pushes, except <code>streamMarket</code>, which the node still answers with "not implemented". <code>listSpotMarkets</code> and <code>streamRejected</code> are the 2026-10-10 additions: the gateway reads tick size, minimum quantity and fee from the first and reports refused orders from the second.</p>
+    <div class="panel" style="margin-top:14px"><div class="pad">
+      <div class="rpc" id="m-rpc"></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:12px">Schemas: <code>types.capnp</code>, <code>tx.capnp</code>, <code>block.capnp</code>, <code>rpc.capnp</code>, <code>p2p.capnp</code> (Hello, BlockAnnounce, HeightRange, Envelope). The gateway's REST contract is frozen in <code>docs/api-contract.md</code>; its WebSocket channels are <code>ticker</code>, <code>account</code>, <code>orderbook:SYMBOL</code>, <code>trades:SYMBOL</code>, <code>candles:SYMBOL:INTERVAL</code> and <code>chain</code>.</div>
+    </div></div>
+
+    <h2 style="margin-top:36px">The derivatives engine</h2>
+    <p class="lede" style="margin-top:6px"><code>cb-engine</code> depends on <code>cb-types</code> and <code>thiserror</code> and nothing else: no clock, no I/O, no randomness, which is what makes replaying a block deterministic.</p>
+    <details open><summary>Margin</summary><div class="body">Notional is <code>qty × mark / 1e10</code>. Equity is collateral minus bad debt plus unrealised PnL; initial and maintenance requirements come from a leverage-tier table in basis points. An order is admitted against the worst-case resulting position. A resting perpetual order reserves no collateral yet, which the architecture notes as a known gap.</div></details>
+    <details><summary>Funding</summary><div class="body">Premium index is an EWMA (one eighth per oracle update) plus an interest term, clamped to the market's cap. The cumulative index accrues per block. Funding is applied by an explicit <code>FundingTick</code> transaction that only the proposer may send and that the block builder refuses to omit: funding is consensus, not a cron job. Every chain started from the shipped genesis once halted at height 3,600 because nothing produced that tick.</div></details>
+    <details><summary>Dated futures</summary><div class="body">Each future has an expiry height. Settlement uses a TWAP of marks over a final window, or the oracle price at expiry; the mark clamp tightens as expiry approaches. Settlement is a required system transaction, like the funding tick.</div></details>
+    <details><summary>Liquidation and the insurance fund</summary><div class="body">A <code>LiquidationTrigger</code> names an owner and a market; the executor re-checks the condition, cancels the owner's resting orders on that market, then closes through the ordinary matcher. The fee is 50 bps of notional, 30 to the insurance fund and 20 to the keeper. The fund is the margin row at the protocol-pinned <code>Address::INSURANCE</code>, seeded from genesis; it absorbs bad debt as it is recorded, and if exhausted the market drops to reduce-only.</div></details>
+    <details><summary>Oracle and mark price</summary><div class="body">Every <code>OracleUpdate</code> is checked against the market's <code>oracle_authority</code>; any other sender gets <code>NotAuthorized</code>. Mark is a clamped median of oracle, book mid and last trade. The authority key reaches <code>cb-oracle</code> as an environment variable, never on the command line.</div></details>
+  </div>
+</section>
+
+<!-- ============================ THREADS ============================ -->
+<section class="view" id="m-view-threads" role="tabpanel" aria-labelledby="m-tab-threads" hidden>
+  <div class="wrap">
+    <h2>One thread matches; everything heavy runs beside it</h2>
+    <p class="lede" style="margin-top:6px">The rule this node is built to, and the shape a matching engine usually takes: the thread that matches orders touches memory and nothing else. Signature recovery, the RocksDB write, the dashboard and the clients each have their own. Click a thread.</p>
+    <div style="margin-top:16px">
+      <div class="panel"><div class="pad diagram-scroll">
+        <figure>
+          <svg id="m-threadmap" viewBox="0 0 980 460" role="img" aria-label="Thread layout: connection threads feed a verification queue, a coordinator recovers signatures on a pool and admits in order into the mempool, the sequencer thread matches and commits, and a writer thread takes the RocksDB write" style="min-width:860px">
+            <defs><marker id="m-tarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g id="m-tedges"></g><g id="m-tnodes"></g><g id="m-tlabels"></g>
+          </svg>
+          <figcaption>Every box is an OS thread or a pool of them. Only the amber one matches orders, and only it may not be parallelised: block N+1's ordering is seeded by block N's hash.</figcaption>
+        </figure>
+      </div></div>
+      <aside class="panel detail" id="m-thread-detail" aria-live="polite" style="margin-top:14px"><div class="pad">
+        <span class="tag ex">Matching</span>
+        <h3>sequencer</h3>
+        <p>Select a thread in the diagram.</p>
+      </div></aside>
+    </div>
+
+    <h2 style="margin-top:36px">What a matched order costs</h2>
+    <p class="lede" style="margin-top:6px">Measured on one ten-core machine: the matcher alone against the whole block loop around it. Matching is the small part.</p>
+    <div class="panel" style="margin-top:14px"><div class="pad diagram-scroll">
+      <figure>
+        <svg id="m-costbar" viewBox="0 0 860 210" role="img" aria-label="Bar chart: the block loop's time split between execution, trie commit, block persistence and ordering, with matching a twelfth of execution" style="min-width:560px"></svg>
+        <figcaption>One block of the in-process order benchmark, by phase. <code>SpotBook::place</code> alone runs at 862,813 orders a second, 1.2&#181;s an order; the loop around it applies 132,834, 7.5&#181;s an order.</figcaption>
+      </figure>
+    </div></div>
+
+    <h2 style="margin-top:36px">Four ways to run it</h2>
+    <p class="lede" style="margin-top:6px">The premise: order validation belongs to a risk engine in front of this node. <code>start2</code> takes that premise and measures the node alone; <code>start3</code> puts every signature back and measures the whole path.</p>
+    <div class="panel tablewrap" style="margin-top:14px"><table>
+      <thead><tr><th class="mono">make</th><th>What runs</th><th>What it measures</th><th class="num">Orders/sec</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">start</td><td>the stack, plus one client at 20 orders/s over RPC</td><td>nothing; the books move so the terminal has something in it</td><td class="num">20</td></tr>
+        <tr><td class="mono">start2</td><td>the stack, plus the node's own generator handing the sequencer pre-verified orders</td><td>the block loop and the matcher, with nothing in front of them</td><td class="num"><b>221,586</b></td></tr>
+        <tr><td class="mono">start3</td><td>the stack, plus six clients signing real orders over RPC, every signature recovered on the pool</td><td>the whole path a client takes, verification included</td><td class="num"><b>36,806</b></td></tr>
+        <tr><td class="mono">startbft + loadbft</td><td>four BFT validators from genesis, plus six signing workers; every validator recovers every signature</td><td>ordering by quorum, with the signing on the same box (M5 Max, 2026-09-29; about half applied, the traders run dry)</td><td class="num"><b>60,000</b> committed</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout">On the 18-core M5 Max <code>start2</code> applies 458,000 orders/s with the generator signing and 1,023,000 with placeholder signatures (<code>CB_BENCH_UNSIGNED=1</code>, 2026-09-29): the single block-loop thread is the bound. The M4 rows: the clients sign on the same ten cores as the node. With only the node and the clients on the machine <code>start3</code> reaches 60,166; the node itself sits near one core with the verification pool idle and the mempool empty, so what bounds it is the clients, not the node. A published figure for a purpose-built exchange engine is 200,000 orders/sec, on dedicated validator hardware. Under the BFT scheme four validators on this one machine commit 60,000 signed orders/sec with every signature verified by every validator (ADR 0008).</div>
+  </div>
+</section>
+
+<!-- ============================ STORAGE ============================ -->
+<section class="view" id="m-view-db" role="tabpanel" aria-labelledby="m-tab-db" hidden>
+  <div class="wrap">
+    <h2>Two databases, one memory, one JSONL</h2>
+    <p class="lede" style="margin-top:6px">The node owns a RocksDB directory with an exclusive lock. The gateway owns a SQLite file for what the chain does not know: users, sessions, candles, leaderboards. Some gateway state is in memory only and vanishes on restart.</p>
+    <div class="stores" style="margin-top:16px">
+      <div class="panel"><div class="pad">
+        <div class="eyebrow">Node · RocksDB · <code>rust/data</code></div>
+        <h3 style="margin-top:6px">22 column families</h3>
+        <p style="font-size:13.5px;color:var(--muted);margin-top:4px">Click a family. Dashed ones enter the state root's hash chain (ADR 0007); the rest are the chain's own bookkeeping.</p>
+        <div class="cf" id="m-cfs"></div>
+        <div class="cfnote" id="m-cfnote">Select a column family to read what it holds and how it is keyed.</div>
+        <div class="callout warn" style="margin-top:14px">Not covered by the state root: <code>blocks</code>, <code>block_by_hash</code>, <code>meta</code>, <code>mempool</code>, <code>qc</code>, <code>mirror_blocks</code> and the unused <code>trie_nodes</code>. Everything the executor changes is covered, so a replica agreeing on the root has agreed on the books, positions, funding and oracle state too.</div>
+      </div></div>
+      <div>
+        <div class="panel"><div class="pad">
+          <div class="eyebrow">Gateway · SQLite · <code>rust/data/gateway.sqlite</code></div>
+          <h3 style="margin-top:6px">9 tables, one migration</h3>
+          <div class="tablewrap" style="margin-top:8px"><table>
+            <thead><tr><th class="mono">table</th><th>holds</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">users</td><td>login address, handle, trading address, role</td></tr>
+              <tr><td class="mono">sessions</td><td>bearer sessions with expiry and device metadata</td></tr>
+              <tr><td class="mono">faucet_claims</td><td>who claimed, when, and the on-chain deposit reference</td></tr>
+              <tr><td class="mono">candles</td><td>OHLCV per symbol and interval, derived per block</td></tr>
+              <tr><td class="mono">ledger_entries</td><td>the per-user money history the portfolio page shows</td></tr>
+              <tr><td class="mono">leaderboard</td><td>ranked PnL snapshots</td></tr>
+              <tr><td class="mono">leaderboard_meta</td><td>when the ranking last ran</td></tr>
+              <tr><td class="mono">market_meta</td><td>display names, status text per symbol</td></tr>
+              <tr><td class="mono">audit_log</td><td>admin actions with actor and timestamp</td></tr>
+            </tbody>
+          </table></div>
+          <p style="font-size:13px;color:var(--muted);margin-top:10px">Repositories in <code>cb-store-sqlite/src/repos/</code>: users, sessions, faucet, candles, ledger, leaderboard, markets, audit. The gateway only ever sees the <code>AppDatabase</code> trait from <code>cb-ports</code>.</p>
+        </div></div>
+
+        <div class="panel" style="margin-top:16px"><div class="pad">
+          <div class="eyebrow">Gateway · in memory · lost on restart</div>
+          <ul class="lost" style="margin:8px 0 0;padding-left:18px;font-size:13.5px">
+            <li><b>Account suspensions</b>, session metadata and handle changes live in <code>InMemoryKv</code>; there is no SQLite <code>KvStore</code> yet.</li>
+            <li><b>Market halts</b> are catalog overrides at the gateway. The chain has no halt, so direct RPC clients keep trading a halted market, and the halt does not survive a restart.</li>
+            <li>The event bus (<code>InMemoryBus</code>), the simulated price feed, the nonce cache, rate limiters and WebSocket hub are all transient by design.</li>
+          </ul>
+        </div></div>
+
+        <div class="panel" style="margin-top:16px"><div class="pad">
+          <div class="eyebrow">Genesis · JSONL</div>
+          <p style="font-size:13.5px;margin-top:6px"><code>rust/genesis-full.jsonl</code> is 185 <code>kind</code>-tagged records with <code>${VAR}</code> substitution from <code>rust/.env</code>: 1 chain, 4 validators, 7 spot markets, 7 perpetuals, 3 dated futures, 3 margin accounts, a company and a community wallet, and one <code>sim</code> record funding 64 synthetic traders. The chain record carries the insurance fund seed. Two smaller files, <code>genesis.jsonl</code> and <code>genesis-perps.jsonl</code>, boot leaner chains into other data directories.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Sources: <code>docs/architecture.md</code>, the two Makefiles, and the crate headers under <code>rust/crates/</code>. Where the architecture document lags the code, the code was followed. Companion to <code>make start</code>, <code>make start2</code> and <code>make status</code>.</div></footer>
+
+
+</div>
+
+<script>
+(function(){
+const root=document.getElementById('doc-flow');
+
+(function(){
+  var root=document.documentElement;
+  var detail={
+    web:{en:["Browser · cb-web","A Leptos application compiled to WebAssembly, about 2 MB. Eight screens: landing, terminal, portfolio, account, faucet, leaderboard, admin, chain. Talks only JSON and WebSocket; every number is a decimal string so no float ever crosses the wire.","rust/crates/cb-web"],ko:["브라우저 · cb-web","WebAssembly로 컴파일된 Leptos 애플리케이션, 약 2 MB. 화면 8개: 랜딩, 터미널, 포트폴리오, 계정, 파우셋, 리더보드, 관리자, 체인. JSON과 WebSocket만 사용하며 모든 숫자는 소수 문자열이라 부동소수점이 선을 넘지 않습니다.","rust/crates/cb-web"]},
+    gw:{en:["cb-gateway","Translates between the browser and Cap'n Proto. Holds custodial keys derived from the user's mnemonic, verifies EIP-191 logins against published eth-account vectors, rate-limits, and keeps a mirror of accounts and books fed by the block stream. Serves every read so the sequencer only ever sees writes. Follows streamRejected and reports a refused order at once.","rust/crates/cb-gateway"],ko:["cb-gateway","브라우저와 Cap'n Proto 사이를 번역합니다. 사용자 니모닉에서 파생된 수탁 키를 보관하고, EIP-191 로그인을 공개된 eth-account 벡터로 검증하며, 속도를 제한하고, 블록 스트림으로 채워지는 계정·오더북 미러를 유지합니다. 모든 읽기를 처리해 시퀀서는 쓰기만 봅니다. streamRejected를 따라가 거부된 주문을 즉시 보고합니다.","rust/crates/cb-gateway"]},
+    sqlite:{en:["SQLite, the application store","Users, sessions, faucet ledger, candles, leaderboard and audit log. Behind the cb-ports AppStore trait; nothing above it names SQLite.","rust/crates/cb-store-sqlite"],ko:["SQLite, 애플리케이션 저장소","사용자, 세션, 파우셋 장부, 캔들, 리더보드, 감사 로그. cb-ports의 AppStore 트레이트 뒤에 있으며 위 계층은 SQLite를 이름으로 부르지 않습니다.","rust/crates/cb-store-sqlite"]},
+    oracle:{en:["cb-oracle","Publishes prices for all ten derivative markets as OraclePost transactions, through the same port a production feed would replace. An oracle post cannot claim a height the chain has not reached.","rust/crates/cb-oracle"],ko:["cb-oracle","파생상품 시장 10개의 가격을 OraclePost 트랜잭션으로 게시합니다. 실제 피드가 대체할 같은 포트를 통합니다. 오라클 게시는 체인이 도달하지 않은 높이를 주장할 수 없습니다.","rust/crates/cb-oracle"]},
+    sim:{en:["cb-sim","Deterministic bot traders that sign real orders and submit them over RPC. Used for make start's market makers, make start3's load, and the simgame that re-derives nine invariants at every block.","rust/crates/cb-sim"],ko:["cb-sim","실제 주문에 서명해 RPC로 제출하는 결정적 봇 트레이더. make start의 마켓 메이커, make start3의 부하, 블록마다 불변식 9개를 재도출하는 simgame에 쓰입니다.","rust/crates/cb-sim"]},
+    rpc:{en:["RPC worker pool","cb_rpc::run_local_serve_multi accepts on one thread and pins each connection to one of N worker runtimes (--rpc-threads, default half the cores). Each submitTx recovers the sender with the C secp256k1 library, refuses high-S, and writes a MempoolRecord. Moving this off the block builder's thread took the node from 11,000 to 55,000 tx/s.","rust/crates/cb-rpc"],ko:["RPC 워커 풀","cb_rpc::run_local_serve_multi는 스레드 하나에서 수락하고 각 연결을 워커 런타임 N개 중 하나에 고정합니다(--rpc-threads, 기본값 코어의 절반). submitTx마다 C secp256k1 라이브러리로 발신자를 복구하고, high-S를 거부하며, MempoolRecord를 씁니다. 이를 블록 빌더 스레드에서 떼어내자 노드는 11,000에서 55,000 tx/s로 올랐습니다.","rust/crates/cb-rpc"]},
+    mempool:{en:["Mempool","A BTreeMap on the Database handle keyed by transaction hash, with a per-sender queue so nonces drain in order. Not persisted. Pending transactions are lost on restart, by design.","rust/crates/cb-state/src/mempool_cf.rs"],ko:["멤풀","트랜잭션 해시를 키로 하는 Database 핸들 위의 BTreeMap. 발신자별 큐가 있어 논스가 순서대로 빠집니다. 영속화하지 않습니다. 대기 트랜잭션은 재시작 시 의도적으로 사라집니다.","rust/crates/cb-state/src/mempool_cf.rs"]},
+    match:{en:["Matching thread","One core, memory only. Drains the mempool and the bypass channel, appends required system transactions, orders the block, and executes it through cb-engine into an in-memory overlay. Order books and every account row are carried from block to block. At the end it moves the rows to the writer and starts the next block. About 415,000 orders/s at 100,000 accounts.","rust/crates/cb-node/src/sequencer.rs · cb-block/src/block.rs"],ko:["매칭 스레드","코어 하나, 메모리만. 멤풀과 우회 채널을 비우고, 필수 시스템 트랜잭션을 덧붙이고, 블록을 정렬하고, cb-engine을 통해 메모리 오버레이로 실행합니다. 오더북과 모든 계정 행은 블록 간에 유지됩니다. 끝에서 행을 라이터로 옮기고 다음 블록을 시작합니다. 계정 10만 개에서 약 415,000 주문/s.","rust/crates/cb-node/src/sequencer.rs · cb-block/src/block.rs"]},
+    writer:{en:["Writer thread","Seals blocks in height order and carries the previous root and hash itself (SealChain). Computes the diff hash and state_root, tx_root, the header and its signature, encodes the block, writes one RocksDB batch, then announces the head. Overlays are retired only after the write lands, so a reader always finds a key in one of the two places it looks.","rust/crates/cb-block/src/block.rs · cb-state/src/state_hash.rs"],ko:["라이터 스레드","블록을 높이 순으로 봉인하고 이전 루트와 해시를 스스로 이어갑니다(SealChain). diff 해시와 state_root, tx_root, 헤더와 서명을 계산하고, 블록을 인코딩하고, RocksDB 배치 하나를 쓴 뒤 헤드를 공지합니다. 오버레이는 쓰기가 끝난 뒤에만 물러나므로 읽기는 항상 두 곳 중 한 곳에서 키를 찾습니다.","rust/crates/cb-block/src/block.rs · cb-state/src/state_hash.rs"]},
+    rocks:{en:["RocksDB","Twenty-one column families: accounts, orders, book indexes, positions, margin, funding, oracle, blocks, meta. On the hot path it is written once per block and never read; reads come from the overlay or the durable view. The order column families are tuned for churn (2 MiB memtables, early L0 compaction) because every fill is a delete.","rust/crates/cb-state/src/db.rs"],ko:["RocksDB","컬럼 패밀리 21개: 계정, 주문, 오더북 인덱스, 포지션, 마진, 펀딩, 오라클, 블록, 메타. 핫 패스에서는 블록당 한 번 쓰고 읽지 않습니다. 읽기는 오버레이나 내구 뷰에서 옵니다. 주문 컬럼 패밀리는 모든 체결이 삭제이므로 잦은 변경에 맞게 조정되어 있습니다(2 MiB 멤테이블, 이른 L0 압축).","rust/crates/cb-state/src/db.rs"]},
+    replica:{en:["Replicas","Receive blocks by announce-then-fetch gossip, verify prev_hash and tx_root, recover every sender themselves, re-execute, and compare state_root with the header. A mismatch halts the replica at that block. Peers are scored and temporarily banned; catch-up works from any peer.","rust/crates/cb-node/src/replica.rs · cb-net"],ko:["레플리카","공지 후 가져오기 가십으로 블록을 받고, prev_hash와 tx_root를 검증하고, 모든 발신자를 직접 복구하고, 재실행하고, state_root를 헤더와 대조합니다. 불일치하면 그 블록에서 레플리카가 멈춥니다. 피어는 점수를 매겨 일시적으로 차단되며, 따라잡기는 어떤 피어에서든 가능합니다.","rust/crates/cb-node/src/replica.rs · cb-net"]},
+    dash:{en:["cb-dashboard","An HTTP page on the node showing height, the last transactions, books and positions. Reads the durable view, so it never sees a block before the write has landed.","rust/crates/cb-dashboard"],ko:["cb-dashboard","높이, 최근 트랜잭션, 오더북, 포지션을 보여주는 노드의 HTTP 페이지. 내구 뷰를 읽으므로 쓰기가 끝나기 전의 블록은 보지 않습니다.","rust/crates/cb-dashboard"]},
+    ports:{en:["cb-ports","The replaceability seam. Application store, event bus, ordered key-value store, market data, reference data, custody, identity and the clock are each a trait with a mock on one side and room for a real implementation on the other. Each ships a fault-injecting decorator.","rust/crates/cb-ports"],ko:["cb-ports","교체 지점. 애플리케이션 저장소, 이벤트 버스, 정렬 키-값 저장소, 시장 데이터, 참조 데이터, 수탁, 신원, 시계가 각각 트레이트이며 한쪽에는 목, 다른 쪽에는 실제 구현의 자리가 있습니다. 각각 결함 주입 데코레이터를 제공합니다.","rust/crates/cb-ports"]}
+  };
+  var box=document.getElementById('mapdetail');
+  var nodes=root.querySelectorAll('#mapsvg .node');
+  var current=null;
+  function setLang(l){
+    if(l==='ko'){root.setAttribute('data-lang','ko');root.lang='ko';}else{root.removeAttribute('data-lang');root.lang='en';}
+    document.getElementById('lang-en').setAttribute('aria-pressed',l!=='ko');
+    document.getElementById('lang-ko').setAttribute('aria-pressed',l==='ko');
+    try{localStorage.setItem('cbl-lang',l);}catch(e){}
+    if(current)show(current);
+  }
+  function show(id){
+    current=id;
+    var l=root.getAttribute('data-lang')==='ko'?'ko':'en';
+    var d=detail[id]&&detail[id][l]; if(!d)return;
+    box.innerHTML='';
+    var h=document.createElement('h3');h.textContent=d[0];
+    var p=document.createElement('p');p.textContent=d[1];
+    var m=document.createElement('div');m.className='mono';m.textContent=d[2];
+    box.appendChild(h);box.appendChild(p);box.appendChild(m);
+    nodes.forEach(function(n){n.classList.toggle('on',n.getAttribute('data-id')===id);});
+  }
+  nodes.forEach(function(n){
+    n.addEventListener('click',function(){show(n.getAttribute('data-id'));});
+    n.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(n.getAttribute('data-id'));}});
+  });
+  root.querySelectorAll('.step').forEach(function(s){
+    s.addEventListener('click',function(){
+      var open=s.getAttribute('aria-expanded')==='true';
+      root.querySelectorAll('.step').forEach(function(o){o.setAttribute('aria-expanded','false');});
+      if(!open){s.setAttribute('aria-expanded','true');show(s.getAttribute('data-node'));}
+    });
+  });
+  var tabs=root.querySelectorAll('[role="tab"]');
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(o){o.setAttribute('aria-selected','false');document.getElementById(o.getAttribute('aria-controls')).hidden=true;});
+      t.setAttribute('aria-selected','true');document.getElementById(t.getAttribute('aria-controls')).hidden=false;
+    });
+  });
+  document.getElementById('lang-en').addEventListener('click',function(){setLang('en');});
+  document.getElementById('lang-ko').addEventListener('click',function(){setLang('ko');});
+  var initial='en';
+  try{initial=localStorage.getItem('cbl-lang')||'en';}catch(e){}
+  if(location.hash==='#ko')initial='ko'; else if(location.hash==='#en')initial='en';
+  setLang(initial);
+  var first=root.querySelector('.step');
+  if(first){first.setAttribute('aria-expanded','true');show('web');}
+})();
+
+})();
+(function(){
+const root=document.getElementById('doc-atlas');
+
+(function(){
+  // ---------------- tabs
+  const tabs=[...root.querySelectorAll('nav.tabs button')];
+  const views=tabs.map(t=>document.getElementById(t.getAttribute('aria-controls')));
+  function show(i){tabs.forEach((t,j)=>{t.setAttribute('aria-selected',String(i===j));views[j].hidden=i!==j;});try{localStorage.setItem('cbl-atlas-tab',String(i));}catch(e){}}
+  tabs.forEach((t,i)=>t.addEventListener('click',()=>show(i)));
+  try{const s=parseInt(localStorage.getItem('cbl-atlas-tab'));if(!isNaN(s)&&s>=0&&s<tabs.length)show(s);}catch(e){}
+
+  // ---------------- crate map data
+  // layer: l1 (chain spine), ex (exchange), in (infrastructure & tooling)
+  const C={
+    'cb-types':{l:'l1',x:30,y:470,d:'Primitive types and the market universe: ids, scales, symbols, calendar. Append-only enums: BtcUsd is ordinal 0 forever.',deps:[]},
+    'cb-crypto':{l:'l1',x:30,y:400,d:'keccak256 and secp256k1 the Ethereum way: recoverable signatures, low-S, addresses from public keys.',deps:['cb-types']},
+    'cb-schema':{l:'l1',x:165,y:400,d:"Cap'n Proto schemas compiled by build.rs, plus the canonical encoding shared by node, gateway and clients.",deps:['cb-types','cb-crypto']},
+    'cb-trie':{l:'l1',x:30,y:330,d:'Deterministic binary Merkle trie over any KvStore. Four of these produce the state root.',deps:['cb-types','cb-crypto']},
+    'cb-state':{l:'l1',x:165,y:330,d:'Persistent node state on RocksDB: 22 column families, accounts, books, positions, mempool, blocks, tries.',deps:['cb-types','cb-crypto','cb-trie']},
+    'cb-tx':{l:'l1',x:30,y:260,d:'Transaction bodies, signing, static validation. Owns the sixteen TxBody variants from Transfer to FuturesSettle.',deps:['cb-types','cb-crypto','cb-schema']},
+    'cb-engine':{l:'l1',x:165,y:260,d:'The pure execution layer: spot and perp books, margin, funding, mark, liquidation, dated futures. No I/O, no clock, no RNG.',deps:['cb-types']},
+    'cb-consensus':{l:'l1',x:300,y:260,d:'The BFT engine (bft/): rounds, proposals, votes, quorum and timeout certificates, leader reputation, a deterministic simulator; plus the sequencer scheme\'s votes and certificates.',deps:['cb-types','cb-crypto','cb-state']},
+    'cb-block':{l:'l1',x:165,y:190,d:'Block production and execution: build_and_apply, the executor for every body, intra-block ordering, buffered BlockState.',deps:['cb-types','cb-crypto','cb-engine','cb-state','cb-tx','cb-consensus']},
+    'cb-rpc':{l:'l1',x:300,y:190,d:"Cap'n Proto RPC server and client, mempool admission (nonce ledger, chain id, static checks), block and market streams.",deps:['cb-types','cb-state','cb-tx','cb-block','cb-engine','cb-consensus','cb-schema','cb-crypto']},
+    'cb-net':{l:'l1',x:300,y:120,d:'The trust boundary for remote blocks (re-execute, compare root) and a gossip mesh with peer scoring.',deps:['cb-types','cb-crypto','cb-state','cb-tx','cb-block','cb-consensus','cb-rpc','cb-schema']},
+    'cb-dashboard':{l:'l1',x:30,y:120,d:'The operator dashboard served inside the node on 8080: throughput, order flow, chain head, perps panels.',deps:['cb-types','cb-state','cb-block','cb-rpc']},
+    'cb-node':{l:'l1',x:165,y:50,d:'The binary. Sequencer and replica drivers, p2p wiring, the in-process benchmark, cb-order-bench.',deps:['cb-types','cb-crypto','cb-schema','cb-state','cb-tx','cb-engine','cb-block','cb-consensus','cb-rpc','cb-net','cb-genesis','cb-dashboard','cb-sim']},
+    'cb-genesis':{l:'l1',x:300,y:50,d:'JSONL genesis loader and applier with ${VAR} substitution; an unset variable is a hard error.',deps:['cb-types','cb-state','cb-crypto']},
+
+    'cb-ports':{l:'ex',x:590,y:470,d:'The replaceability seam: AppDatabase, EventBus, KvStore, MarketDataFeed, EquityReferenceData, CustodyProvider, IdentityProvider, Clock.',deps:['cb-types']},
+    'cb-store-sqlite':{l:'in',x:450,y:400,d:'AppDatabase on SQLite through sqlx: users, sessions, faucet, candles, ledger, leaderboard, markets, audit.',deps:['cb-ports','cb-types']},
+    'cb-bus':{l:'in',x:590,y:400,d:'EventBus as an ordered per-topic log with offsets; InMemoryBus and a FaultyBus for resilience tests.',deps:['cb-ports']},
+    'cb-feed':{l:'in',x:730,y:400,d:'MarketDataFeed (seeded geometric Brownian motion) and static equity reference data, with faulty variants.',deps:['cb-ports','cb-types']},
+    'cb-gateway':{l:'ex',x:590,y:260,d:'Browser-facing translator: JSON and WebSocket out, Cap\'n Proto in. Owns accounts, sessions, faucet, candles, leaderboard, admin, and signs chain transactions for users.',deps:['cb-ports','cb-store-sqlite','cb-bus','cb-feed','cb-types','cb-crypto','cb-tx','cb-rpc','cb-schema','cb-engine','cb-block']},
+    'cb-oracle':{l:'ex',x:730,y:260,d:'Signs and submits one OracleUpdate per derivative market per tick as the genesis oracle authority.',deps:['cb-crypto','cb-feed','cb-ports','cb-rpc','cb-schema','cb-tx','cb-types']},
+    'cb-web':{l:'ex',x:590,y:120,d:'The Leptos 0.8 terminal compiled to WebAssembly. Outside the workspace; talks only to the gateway.',deps:[]},
+    'cb-e2e':{l:'in',x:730,y:120,d:'Boots the real cb-node and cb-gateway binaries on ports it picks and drives them as a browser would.',deps:['cb-crypto','cb-types','cb-genesis','cb-gateway']},
+    'cb-client':{l:'in',x:450,y:50,d:"REPL and CLI wallet over the same Cap'n Proto RPC; derives the admin address for make start.",deps:['cb-types','cb-crypto','cb-schema','cb-state','cb-tx','cb-rpc']},
+    'cb-sim':{l:'in',x:590,y:50,d:'RPC load generator (buyers, sellers, transfers) and in-process crash, squeeze and fee scenarios.',deps:['cb-types','cb-crypto','cb-tx','cb-rpc','cb-schema','cb-block','cb-state','cb-engine']},
+    'cb-simgame':{l:'in',x:730,y:50,d:'Bot-driven exchange that re-checks nine invariants after every block; runs in process or live over RPC.',deps:['cb-ports','cb-feed','cb-types','cb-crypto','cb-tx','cb-rpc','cb-schema','cb-engine','cb-state','cb-block']},
+  };
+  const W=118,H=40;
+  const svg=document.getElementById('m-cratemap');
+  const gE=document.getElementById('m-edges'),gC=document.getElementById('m-crates'),gB=document.getElementById('m-bands');
+  const NS='http://www.w3.org/2000/svg';
+  function el(n,a,txt){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+  // bands
+  [['Chain spine',20,30,410,510],['Exchange layer and its infrastructure',440,30,410,510]].forEach(([t,x,y,w,h])=>{
+    gB.appendChild(el('rect',{x,y,width:w,height:h,rx:8,class:'band'}));
+    gB.appendChild(el('text',{x:x+10,y:y-8,class:'bandlabel'},t));
+  });
+  // edges: draw only intra-visible edges, as straight lines center to center, shortened
+  const edges=[];
+  for(const n in C)for(const d of C[n].deps){edges.push([n,d]);}
+  function center(n){return [C[n].x+W/2,C[n].y+H/2];}
+  edges.forEach(([a,b])=>{
+    const [x1,y1]=center(a),[x2,y2]=center(b);
+    const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
+    // trim to box edges approximately
+    const t1=Math.min(Math.abs((W/2)/(ux||1e-9)),Math.abs((H/2)/(uy||1e-9)));
+    const p=el('line',{x1:x1+ux*t1,y1:y1+uy*t1,x2:x2-ux*(t1+2),y2:y2-uy*(t1+2),class:'edge','data-a':a,'data-b':b,'marker-end':'url(#arr)'});
+    gE.appendChild(p);
+  });
+  // crates
+  for(const n in C){
+    const c=C[n];
+    const g=el('g',{class:'crate '+c.l,tabindex:'0',role:'button','aria-label':n,'data-n':n});
+    g.appendChild(el('rect',{x:c.x,y:c.y,width:W,height:H,rx:6}));
+    g.appendChild(el('text',{x:c.x+10,y:c.y+25},n));
+    gC.appendChild(g);
+    g.addEventListener('click',()=>select(n));
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n);}});
+  }
+  const detail=document.getElementById('m-crate-detail');
+  const LAYER={l1:['l1','Chain spine'],ex:['ex','Exchange layer'],in:['in','Infrastructure & tooling']};
+  function usedBy(n){return Object.keys(C).filter(k=>C[k].deps.includes(n));}
+  function chips(list){return list.length?list.map(k=>`<span class="chip" data-go="${k}">${k}</span>`).join(''):'<span style="color:var(--muted);font-size:13px">nothing in the workspace</span>';}
+  function select(n){
+    const c=C[n];
+    root.querySelectorAll('#m-crates .crate').forEach(g=>{const k=g.dataset.n;g.classList.toggle('on',k===n);g.classList.toggle('dim',k!==n&&!c.deps.includes(k)&&!C[k].deps.includes(n));});
+    root.querySelectorAll('#m-edges .edge').forEach(e=>{const a=e.dataset.a,b=e.dataset.b;e.classList.toggle('on',a===n||b===n);e.classList.toggle('up',b===n);});
+    const [cls,name]=LAYER[c.l];
+    detail.querySelector('.pad').innerHTML=`<span class="tag ${cls}">${name}</span><h3>${n}</h3><p>${c.d}</p><dl><dt>Path</dt><dd class="path">rust/crates/${n}</dd><dt>Depends on</dt><dd class="chips">${chips(c.deps)}</dd><dt>Used by</dt><dd class="chips">${chips(usedBy(n))}</dd></dl>`;
+    detail.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>select(ch.dataset.go)));
+  }
+  select('cb-block');
+
+  // ---------------- flow
+  const STEPS=[
+    {t:'Browser builds the request',p:'The Leptos app posts an order with every money value as a decimal string. It has already signed an EIP-191 login challenge; it signs nothing else.',w:'cb-web · POST /api/v1/orders',node:'browser'},
+    {t:'Gateway authenticates and signs',p:'The session maps to a login address. The trading key is HKDF-SHA256(server secret, login address), recomputed on demand and never stored. Decimals become fixed-point; the body becomes a Transaction{nonce, chain_id, body}.',w:'cb-gateway · auth/, signer.rs (TxSubmitter)',node:'gateway'},
+    {t:'RPC admission: first verification',p:'submitTx runs static validation, recovers the sender from the signature once, checks the chain id against Meta, and checks the nonce against the pending-nonce ledger. A mismatch answers badNonce with the expected value; the gateway retries once after a fresh read.',w:'cb-rpc · server.rs, admission.rs',node:'rpc',mark:'verify'},
+    {t:'Mempool',p:'A MempoolRecord{signed, sender} joins that sender&#39;s queue, in nonce order, carrying the recovered address so the block builder never recovers a signature again. In memory, not a column family: a mempool is node-local and ephemeral, and reading one out of an LSM tree meant stepping over every key the drains had deleted.',w:'cb-state · mempool_cf.rs',node:'mempool'},
+    {t:'Sequencer drains and orders',p:'A block is cut when the interval has elapsed or a full block is waiting, whichever comes first. The drain takes each sender&#39;s lowest nonces first, round robin, so a block never receives a run with a hole in it. It appends the system transactions the height demands (funding ticks, futures settlements), and orders them: a sender\'s transactions stay together in nonce order, cancels beat placements between senders, senders are permuted by keccak(parent hash, sender). If nothing is pending, no block is produced.',w:'cb-node · sequencer.rs; cb-block · ordering.rs',node:'seq'},
+    {t:'Executor applies each body',p:'apply_tx_at checks the nonce exactly, locks the balance the order needs, hydrates the market\'s book once per block, matches, and settles every fill. A body that fails rolls back to a savepoint and is dropped: the one place a transaction disappears. Its nonce is not consumed; the sequencer records the refusal and serves it on streamRejected so the gateway can report it. Under BFT the transaction stays in the block with applied false and does consume its nonce.',w:'cb-block · executor.rs; cb-engine · spot_book.rs',node:'exec',mark:'drop'},
+    {t:'The hash chain and the state root',p:'Changed rows buffer in BlockState and flush in one RocksDB batch. The state root is sha256(domain ‖ prev_root ‖ sha256(changes in (cf, key) order)) over the fifteen committed column families (ADR 0007); the four Merkle tries it replaced are no longer written.',w:'cb-block · state.rs; cb-state · state_hash.rs',node:'trie'},
+    {t:'Header signed, block persisted',p:'The header is signed over "CB-BLOCK\\0" ‖ bincode(header) with the proposer key, the block is written, the head advances, and the leader votes for its own block into the vote pool.',w:'cb-node · sequencer.rs; cb-state · CF_BLOCKS',node:'block',mark:'verify'},
+    {t:'Streams fan out',p:'The one block subscription the gateway holds delivers the block; replicas receive it over streamBlocksRaw and, in strict sync, re-execute it and compare the root before voting. The dashboard counts the block\'s transactions and orders by side and market.',w:'cb-rpc · stream.rs; cb-net · syncer.rs; cb-dashboard',node:'stream'},
+    {t:'The answer reaches the browser',p:'POST /orders has been waiting up to 2 s for the block that carries the transaction; it now answers with the derived order id. The account WebSocket channel pushes the new balance and the resting order. An order the executor refused comes back rejected instead: in the reply if the refusal landed inside the window, otherwise from streamRejected.',w:'cb-gateway · tracker.rs, watcher.rs, ws.rs',node:'browser',back:true},
+  ];
+  const FN={
+    browser:{x:20,y:60,t:'Browser',k:'cb-web · wasm'},
+    gateway:{x:180,y:60,t:'Gateway',k:'cb-gateway · 8081'},
+    rpc:{x:340,y:60,t:'RPC admission',k:'cb-rpc · 7700'},
+    mempool:{x:500,y:60,t:'Mempool',k:'in memory, per sender'},
+    seq:{x:660,y:60,t:'Sequencer loop',k:'every 100 ms'},
+    exec:{x:660,y:200,t:'Executor',k:'cb-block · cb-engine'},
+    trie:{x:500,y:200,t:'Hash chain → state root',k:'32 B · ADR 0007'},
+    block:{x:340,y:200,t:'Signed block',k:'CF_BLOCKS · head'},
+    stream:{x:180,y:200,t:'Block streams',k:'gateway · replicas · dashboard'},
+  };
+  const FE=[['browser','gateway','JSON, decimals'],['gateway','rpc',"Cap'n Proto, signed"],['rpc','mempool','record + sender'],['mempool','seq','drain ≤ 10k'],['seq','exec','ordered batch'],['exec','trie','buffered writes'],['trie','block','state root'],['block','stream','push'],['stream','gateway','block','up'],['gateway','browser','order id · WS','up']];
+  const FW=130,FH=52;
+  const fsvg=document.getElementById('m-flowmap'),gFE=document.getElementById('m-fedges'),gFN=document.getElementById('m-fnodes'),gFL=document.getElementById('m-flabels');
+  function fc(n){return [FN[n].x+FW/2,FN[n].y+FH/2];}
+  FE.forEach(([a,b,l,up],i)=>{
+    const A=FN[a],B=FN[b];let x1,y1,x2,y2,lx,ly;
+    if(A.y===B.y){ // horizontal
+      const dir=B.x>A.x?1:-1; const yo=up?FH-10:10; // return legs run along the bottom edge
+      x1=dir>0?A.x+FW:A.x; x2=dir>0?B.x-2:B.x+FW+2; y1=y2=A.y+yo; lx=(x1+x2)/2; ly=y1+(up?14:-6);
+    } else { // vertical (seq -> exec)
+      x1=x2=A.x+FW/2; y1=A.y+FH; y2=B.y-2; lx=x1+8; ly=(y1+y2)/2+4;
+    }
+    gFE.appendChild(el('line',{x1,y1,x2,y2,class:'flow-edge','data-i':i,'marker-end':'url(#farr)'}));
+    gFL.appendChild(el('text',{x:lx,y:ly,'text-anchor':'middle',class:'flow-label','data-i':i},l));
+  });
+  for(const n in FN){const f=FN[n];const g=el('g',{class:'node','data-n':n});g.appendChild(el('rect',{x:f.x,y:f.y,width:FW,height:FH,rx:7}));g.appendChild(el('text',{x:f.x+10,y:f.y+21},f.t));g.appendChild(el('text',{x:f.x+10,y:f.y+38,class:'k'},f.k));gFN.appendChild(g);}
+  // legend for marks
+  const lg=el('g',{});lg.appendChild(el('text',{x:20,y:300,class:'flow-label'},'◆ verification point   ✕ the one place a transaction is dropped   return leg runs along the lower edge'));fsvg.appendChild(lg);
+  const marks={verify:'◆',drop:'✕'};
+  // per-step: which edges are traversed so far
+  const EDGE_BY_STEP=[[],[0],[1],[2],[3],[4],[5],[6],[7],[8,9]];
+  const stepsEl=document.getElementById('m-steps');
+  STEPS.forEach((s,i)=>{const d=document.createElement('div');d.className='step';d.tabIndex=0;d.setAttribute('role','button');d.innerHTML=`<div class="n">${String(i+1).padStart(2,'0')}${s.mark?' '+marks[s.mark]:''}</div><div><h3>${s.t}</h3><p>${s.p}</p><div class="where">${s.w}</div></div>`;d.addEventListener('click',()=>go(i));d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go(i);}});stepsEl.appendChild(d);});
+  let cur=0;const cap=document.getElementById('m-flowcap'),prev=document.getElementById('m-prev'),next=document.getElementById('m-next');
+  function go(i){
+    cur=Math.max(0,Math.min(STEPS.length-1,i));
+    const s=STEPS[cur];
+    const done=new Set();for(let k=0;k<=cur;k++)EDGE_BY_STEP[k].forEach(e=>done.add(e));
+    const now=new Set(EDGE_BY_STEP[cur]);
+    gFE.querySelectorAll('.flow-edge').forEach(e=>{const k=+e.dataset.i;e.classList.toggle('on',now.has(k));e.classList.toggle('done',done.has(k)&&!now.has(k));});
+    gFL.querySelectorAll('.flow-label').forEach(e=>e.classList.toggle('on',now.has(+e.dataset.i)));
+    const visited=new Set(STEPS.slice(0,cur).map(x=>x.node));
+    gFN.querySelectorAll('.node').forEach(g=>{g.classList.toggle('on',g.dataset.n===s.node);g.classList.toggle('done',visited.has(g.dataset.n)&&g.dataset.n!==s.node);});
+    stepsEl.querySelectorAll('.step').forEach((d,k)=>d.classList.toggle('on',k===cur));
+    cap.textContent=`Stop ${cur+1} of ${STEPS.length}: ${s.t}.`;
+    prev.disabled=cur===0;next.disabled=cur===STEPS.length-1;
+    const d=stepsEl.children[cur];if(d&&window.innerWidth>820)d.scrollIntoView({block:'nearest'});
+  }
+  prev.addEventListener('click',()=>go(cur-1));next.addEventListener('click',()=>go(cur+1));
+  go(0);
+
+  // ---------------- rpc methods
+  const RPC=['submitTx','getAccount','getBlock','getOrderBook','streamBlocks*','streamMarket*','submitVote','streamBlocksRaw*','chainInfo','getPositions','getMarginAccount','getFundingIndex','getOraclePrice','getMarkPrice','getPerpMarket','listPerpMarkets','getFutureMarket','listFutureMarkets','getLiquidationQueue','getPerpOrderBook','listSpotMarkets','streamRejected*'];
+  const rpcEl=document.getElementById('m-rpc');
+  RPC.forEach(m=>{const s=document.createElement('span');const st=m.endsWith('*');s.textContent=m.replace('*','');if(st)s.className='stream';rpcEl.appendChild(s);});
+
+  // ---------------- threads
+  const TH = {
+    client:{x:14,y:46,w:158,h:60,cls:'io',t:'Clients',k:'cb-sim, gateway, wallets',
+      d:'Each holds one Cap&#39;n Proto connection and signs its own transactions. Signing costs about the same as recovering one, roughly 63 microseconds of secp256k1, so on a single machine the clients and the node compete for the same cores. That is what bounds <code>make start3</code>, not the node.'},
+    conn:{x:236,y:46,w:170,h:60,cls:'io',t:'Connection threads',k:'cb-rpc-0..N, one per core',
+      d:'A pool of single-threaded runtimes; each connection is pinned to one for its life. Cap&#39;n Proto&#39;s client is <code>!Send</code>, so a connection cannot migrate. Only new connections are distributed, round robin, by an accept thread. Before this the whole server shared the block builder&#39;s thread, and the node used one core of ten.'},
+    verify:{x:470,y:46,w:170,h:60,cls:'pool',t:'Verification pool',k:'cb-verify-0..N (rayon)',
+      d:'Recovers the sender from each signature. Measured here: 15,981 recoveries a second on one core, 88,983 across ten. Recovery has no state, which is why it is the one part that may run concurrently.'},
+    coord:{x:704,y:46,w:180,h:60,cls:'pool',t:'Admission coordinator',k:'cb-verify-coord',
+      d:'Takes the queue in batches, has the pool recover the batch, then admits it <b>in arrival order</b>: chain id, the nonce ledger, the mempool. Order is the point: a client pipelining nonces 7, 8, 9 must be admitted 7, 8, 9, or everything after the first gap is refused.'},
+    mempool:{x:704,y:180,w:180,h:60,cls:'pool',t:'Mempool',k:'in memory, per sender',
+      d:'Per-sender queues in nonce order, drained round robin so a block never receives a sender&#39;s nonces with a hole in them. It was a RocksDB column family drained in hash order until today; once admission outran block production that scrambling collapsed six connections to 264 orders a second.'},
+    seq:{x:370,y:176,w:270,h:82,cls:'match',t:'Sequencer: the matching thread',k:'main thread; memory only',
+      d:'Drains the mempool, orders the batch, matches every order against in-memory books carried over from the last block, updates balances and hands the changed rows to the writer, which hashes them into the state root chain and signs the header. The one thread that may not be parallelised: block N+1&#39;s ordering is seeded by block N&#39;s hash, so the chain of hashes is serial by construction.'},
+    writer:{x:370,y:318,w:270,h:60,cls:'io',t:'Writer thread',k:'cb-db-writer',
+      d:'Takes each committed block&#39;s batch to RocksDB while the sequencer starts the next one. Until the write lands the block&#39;s rows are served from an overlay every read consults. Nothing leaves the process about a block before that write returns. The block stream, the p2p announcer and the dashboard read a view that skips the overlay.'},
+    dash:{x:704,y:318,w:180,h:60,cls:'io',t:'Dashboard',k:'cb-dashboard',
+      d:'Its own thread. It used to share the matching thread, so under a saturating load the one tool for reading the node went dark exactly when it was needed.'},
+    bench:{x:14,y:180,w:270,h:60,cls:'pool',t:'In-process generator',k:'cb-bench-0..N (make start2)',
+      d:'Signs orders on its own threads and hands them to the sequencer already verified, sender attached. That is the premise that order validation belongs to a risk engine in front of this node. No RPC, no recovery: 221,586 orders a second.'},
+  };
+  const TE = [['client','conn','signed'],['conn','verify','in order'],['verify','coord','senders'],['coord','mempool','admit'],['mempool','seq','drain'],['bench','seq','verified'],['seq','writer','batch'],['writer','dash','durable']];
+  const tsvg=document.getElementById('m-threadmap'), gTE=document.getElementById('m-tedges'), gTN=document.getElementById('m-tnodes'), gTL=document.getElementById('m-tlabels');
+  gTE.appendChild(el('rect',{x:352,y:158,width:306,height:124,rx:8,class:'th-band'}));
+  gTL.appendChild(el('text',{x:362,y:150,class:'bandlabel'},'memory only'));
+  TE.forEach(([a,b,l])=>{
+    const A=TH[a],B=TH[b];
+    let x1,y1,x2,y2,lx,ly;
+    if(Math.abs((A.y+A.h/2)-(B.y+B.h/2))<12){ // same row
+      const dir=B.x>A.x?1:-1;
+      x1=dir>0?A.x+A.w:A.x; x2=dir>0?B.x-3:B.x+B.w+3; y1=y2=A.y+A.h/2; lx=(x1+x2)/2; ly=y1-6;
+    } else if(Math.abs((A.x+A.w/2)-(B.x+B.w/2))<40){ // vertical
+      x1=x2=A.x+A.w/2; y1=A.y+A.h; y2=B.y-3; lx=x1+6; ly=(y1+y2)/2+4;
+    } else { // diagonal: go down then across
+      x1=A.x+A.w/2; y1=A.y+A.h; x2=B.x+(B.x>A.x?0:B.w); y2=B.y+B.h/2;
+      gTE.appendChild(el('path',{d:`M${x1},${y1} V${y2} H${x2+(B.x>A.x?-3:3)}`,class:'th-edge','marker-end':'url(#tarr)'}));
+      gTL.appendChild(el('text',{x:x1+6,y:(y1+y2)/2,class:'th-lab'},l));
+      return;
+    }
+    gTE.appendChild(el('line',{x1,y1,x2,y2,class:'th-edge','marker-end':'url(#tarr)'}));
+    gTL.appendChild(el('text',{x:lx,y:ly,'text-anchor':'middle',class:'th-lab'},l));
+  });
+  for(const k in TH){
+    const n=TH[k];
+    const g=el('g',{class:'th '+n.cls,tabindex:'0',role:'button','aria-label':n.t,'data-k':k});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:7}));
+    g.appendChild(el('text',{x:n.x+12,y:n.y+24},n.t));
+    g.appendChild(el('text',{x:n.x+12,y:n.y+42,class:'k'},n.k));
+    gTN.appendChild(g);
+    const pick=()=>selectThread(k);
+    g.addEventListener('click',pick);
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+  }
+  const thDetail=document.getElementById('m-thread-detail');
+  const THTAG={match:['ex','Matching'],pool:['l1','Parallel'],io:['in','I/O and clients']};
+  function selectThread(k){
+    const n=TH[k];
+    gTN.querySelectorAll('.th').forEach(g=>g.classList.toggle('on',g.dataset.k===k));
+    const [cls,name]=THTAG[n.cls];
+    thDetail.querySelector('.pad').innerHTML=`<span class="tag ${cls}">${name}</span><h3>${n.t}</h3><p style="margin-top:8px">${n.d}</p><dl><dt>Thread</dt><dd class="path">${n.k}</dd></dl>`;
+  }
+  selectThread('seq');
+
+  // ---------------- cost bar
+  const PHASES=[['execute (match + state)',56.8,'var(--exch)'],['commit (trie hash + batch)',28.6,'var(--chain)'],['persist (block + head)',8.5,'var(--infra)'],['ordering + drain',6.1,'var(--muted)']];
+  const cb=document.getElementById('m-costbar');
+  (function(){
+    const X=20,Y=50,W=820,H=46;
+    let x=X;
+    PHASES.forEach(([label,pct,color])=>{
+      const w=W*pct/100;
+      const g=el('g',{class:'cb-seg'});
+      g.appendChild(el('rect',{x,y:Y,width:Math.max(w-2,2),height:H,rx:4,fill:color,opacity:'.85'}));
+      if(w>110){
+        g.appendChild(el('text',{x:x+10,y:Y+20,fill:'#fff'},`${pct}%`));
+        g.appendChild(el('text',{x:x+10,y:Y+36,fill:'#fff','font-size':'10.5'},label.split(' (')[0]));
+      }
+      cb.appendChild(g);
+      x+=w;
+    });
+    cb.appendChild(el('text',{x:X,y:Y-14,class:'cb-axis'},'one block of the in-process order benchmark, by phase'));
+    cb.appendChild(el('line',{x1:X,y1:Y+H+14,x2:X+W,y2:Y+H+14,class:'cb-rule'}));
+    // matching's share of execute
+    const mw=W*56.8/100*0.21;
+    cb.appendChild(el('rect',{x:X,y:Y+H+22,width:mw,height:16,rx:3,fill:'var(--exch)'}));
+    cb.appendChild(el('text',{x:X+mw+10,y:Y+H+35,class:'cb-axis'},'SpotBook::place, the matcher itself: 12% of the loop, 1.2 microseconds an order'));
+    cb.appendChild(el('text',{x:X,y:Y+H+66,class:'cb-axis'},'matcher alone 862,813 orders/s   |   whole loop 132,834 orders/s   |   66,400 matched/s'));
+    const small=PHASES.filter(([,pct])=>W*pct/100<=110).map(([l,pct])=>`${l} ${pct}%`).join('   ');
+    if(small) cb.appendChild(el('text',{x:X+W,y:Y-14,'text-anchor':'end',class:'cb-axis'},small));
+  })();
+
+  // ---------------- column families
+  const CF=[
+    ['accounts','Balances, locks and the nonce per address. Keyed by address.',1],
+    ['orders','Resting spot orders by derived order id (sender, height, tx index, counter).',1],
+    ['book_index','Spot price-time index: market ‖ side ‖ price (16 bytes big-endian) ‖ seq. A prefix scan is the book in priority order.',1],
+    ['markets','Spot market configuration: tick size, lot, fee; what listSpotMarkets serves.',1],
+    ['blocks','Full blocks by height; what streamBlocks serves and pruning trims.',0],
+    ['block_by_hash','Height lookup by block hash.',0],
+    ['meta','Chain id, head height and hash, proposer address, the current state root.',0],
+    ['mempool','Admitted transactions with their recovered sender, drained by the sequencer each interval.',0],
+    ['trie_nodes','Kept from the Merkle-trie era; the hash-chain root (ADR 0007) no longer writes it.',0],
+    ['validators','The validator set genesis declared, for verifying votes and certificates.',1],
+    ['qc','Quorum certificates by height.',0],
+    ['mirror_blocks','Raw block bytes a fast-mirror replica stores without executing.',0],
+    ['positions','Open perpetual and futures positions per owner and market.',1],
+    ['margin_accounts','Collateral and bad debt per owner, including the insurance fund at Address::INSURANCE.',1],
+    ['funding_indices','Cumulative funding index and last tick height per derivative market.',1],
+    ['perp_markets','Perpetual market configuration and status, including the oracle authority.',1],
+    ['futures_markets','Dated future configuration: expiry height, settlement window.',1],
+    ['oracle_state','Latest oracle price and the mark price inputs per market, with the heights the 600-block freshness rule reads.',1],
+    ['liquidation_queue','Accounts flagged below maintenance, awaiting a keeper.',1],
+    ['perp_orders','Resting derivative orders by id.',1],
+    ['perp_book_index','Derivative price-time index, same key shape as the spot one.',1],
+    ['perp_orders_by_owner','Owner → order ids, appended last so the stage can index its per-family maps by position.',1],
+  ];
+  const cfs=document.getElementById('m-cfs'),cfnote=document.getElementById('m-cfnote');
+  CF.forEach(([n,d,root])=>{const b=document.createElement('button');b.textContent=n;b.type='button';if(root)b.className='root';b.addEventListener('click',()=>{cfs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cfnote.innerHTML=`<b>${n}</b> — ${d}${root?' <span style="color:var(--chain)">Part of the state root.</span>':''}`;});cfs.appendChild(b);});
+})();
+
+})();
+
+(function(){
+  const docs={flow:document.getElementById('doc-flow'),atlas:document.getElementById('doc-atlas')};
+  const sw={flow:document.getElementById('sw-flow'),atlas:document.getElementById('sw-atlas')};
+  const lang=document.getElementById('langsw');
+  function show(which, push){
+    for(const k in docs){ docs[k].hidden = k!==which; sw[k].setAttribute('aria-pressed', String(k===which)); }
+    // The atlas is written in English only; the language switch applies to the flow.
+    lang.dataset.off = which==='atlas' ? '1' : '';
+    try{ localStorage.setItem('cbl-doc', which); }catch(e){}
+    if(push){ try{ history.replaceState(null,'','#'+which); }catch(e){ location.hash=which; } }
+    window.scrollTo({top:0});
+  }
+  sw.flow.addEventListener('click',()=>show('flow',true));
+  sw.atlas.addEventListener('click',()=>show('atlas',true));
+  let initial='flow';
+  const h=(location.hash||'').replace('#','');
+  if(h==='atlas'||h==='flow') initial=h;
+  else { try{ const s=localStorage.getItem('cbl-doc'); if(s==='atlas'||s==='flow') initial=s; }catch(e){} }
+  show(initial,false);
+  // The atlas's view tabs stick just below this bar, whatever height the bar wraps to.
+  const bar=document.getElementById('topbar');
+  const setH=()=>document.documentElement.style.setProperty('--topbar-h', bar.offsetHeight+'px');
+  setH(); if(window.ResizeObserver){ new ResizeObserver(setH).observe(bar); } else { window.addEventListener('resize',setH); }
+  window.addEventListener('hashchange',()=>{ const x=(location.hash||'').replace('#',''); if(x==='atlas'||x==='flow') show(x,false); });
+})();
+
+</script>
+</body>
+</html>

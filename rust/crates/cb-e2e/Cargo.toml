@@ -1,0 +1,28 @@
+[package]
+name = "cb-e2e"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "End-to-end suite: boots the real cb-node and cb-gateway binaries and drives them as a client would."
+
+# The harness is a library because the test binaries in `tests/` all need it.
+# It is deliberately NOT a dev-dependency-only module: `tests/*.rs` are separate
+# crates and cannot share a `mod` without recompiling it per binary.
+
+[dependencies]
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["process", "signal", "rt-multi-thread", "macros", "time", "sync", "net"] }
+reqwest = { workspace = true }
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+tempfile = { workspace = true }
+hex = { workspace = true }
+rust_decimal = { workspace = true }
+secp256k1 = { workspace = true }
+cb-crypto = { path = "../cb-crypto" }
+cb-types = { path = "../cb-types" }
+cb-genesis = { path = "../cb-genesis" }
+cb-gateway = { path = "../cb-gateway" }

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SuperFrontierLiquid · L1</title>
+  <meta http-equiv="refresh" content="2" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: Canvas;
+      --fg: CanvasText;
+      --dim: color-mix(in srgb, currentColor 60%, transparent);
+      --line: color-mix(in srgb, currentColor 14%, transparent);
+      --soft: color-mix(in srgb, currentColor 6%, transparent);
+      --buy:  #16a34a;
+      --sell: #dc2626;
+      --btc:  #f59e0b;
+      --eth:  #6366f1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      max-width: 1100px;
+      margin: 24px auto 60px;
+      padding: 0 18px;
+    }
+    h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+    h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; margin: 26px 0 10px; font-weight: 600; }
+    code { font: 12px/1.4 ui-monospace, SFMono-Regular, monospace; opacity: 0.85; word-break: break-all; }
+    .pill {
+      display: inline-block;
+      padding: 1px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid var(--line);
+    }
+    .pill.ok  { background: color-mix(in srgb, var(--buy) 18%, transparent); border-color: color-mix(in srgb, var(--buy) 50%, transparent); color: var(--buy); }
+    .pill.off { color: var(--dim); }
+
+    /* Card grid */
+    .grid     { display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); }
+    .grid-2   { grid-template-columns: repeat(2, 1fr); }
+    .grid-3   { grid-template-columns: repeat(3, 1fr); }
+    .span-2   { grid-column: span 2; }
+    .span-4   { grid-column: span 4; }
+    .card {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+    .card .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+    .card .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+    .card .v.huge { font-size: 36px; letter-spacing: -0.02em; }
+    .card .v.med  { font-size: 22px; }
+    .card .sub { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+    .card.hero { background: linear-gradient(135deg, color-mix(in srgb, var(--buy) 14%, transparent), color-mix(in srgb, var(--eth) 12%, transparent)); border: 1px solid color-mix(in srgb, var(--buy) 40%, transparent); }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* Two-tone bar */
+    .bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+      background: var(--line);
+    }
+    .bar > span { display: block; height: 100%; }
+    .bar-buy  { background: var(--buy); }
+    .bar-sell { background: var(--sell); }
+    .bar-btc  { background: var(--btc); }
+    .bar-eth  { background: var(--eth); }
+    .legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-top: 6px;
+      opacity: 0.85;
+      font-variant-numeric: tabular-nums;
+    }
+    .legend .lhs, .legend .rhs { display: inline-flex; gap: 6px; align-items: center; }
+    .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+    .dot.buy  { background: var(--buy); }
+    .dot.sell { background: var(--sell); }
+    .dot.btc  { background: var(--btc); }
+    .dot.eth  { background: var(--eth); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; font-weight: 600; }
+    td.num { text-align: right; }
+    .dim { opacity: 0.6; }
+    .right { text-align: right; }
+
+    .footer { margin-top: 32px; font-size: 12px; opacity: 0.55; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>
+    SuperFrontierLiquid · L1
+    <span class="pill {{bench_class}}">{{bench_state}}</span>
+  </h1>
+
+  <h2>Throughput</h2>
+  <div class="grid">
+    <div class="card hero span-2">
+      <div class="k">transactions / s</div>
+      <div class="v huge num">{{recent_tps}}</div>
+      <div class="sub">applied into blocks · 5-second window · avg {{avg_tps}} tps · elapsed {{elapsed}}</div>
+    </div>
+    <div class="card">
+      <div class="k">orders / s · applied</div>
+      <div class="v med num">{{orders_applied_per_sec}}</div>
+      <div class="sub">order placements only · {{orders_total}} total</div>
+    </div>
+    <div class="card">
+      <div class="k">orders / s · submitted</div>
+      <div class="v med num">{{orders_submitted_per_sec}}</div>
+      <div class="sub">order placements only · {{orders_submitted}} total</div>
+    </div>
+  </div>
+
+  <h2>Order flow</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="k">side · per second</div>
+      <div class="v med num"><span style="color:var(--buy)">{{buys_per_sec}}</span> · <span style="color:var(--sell)">{{sells_per_sec}}</span></div>
+      <div class="bar">
+        <span class="bar-buy"  style="width: {{buy_pct}}%"></span>
+        <span class="bar-sell" style="width: {{sell_pct}}%"></span>
+      </div>
+      <div class="legend">
+        <span class="lhs"><span class="dot buy"></span>buy {{buy_pct}}% · {{buys_total}}</span>
+        <span class="rhs"><span class="dot sell"></span>sell {{sell_pct}}% · {{sells_total}}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k">market · per second</div>
+      <div class="v med num"><span style="color:var(--btc)">{{btc_per_sec}}</span> · <span style="color:var(--eth)">{{eth_per_sec}}</span></div>
+      <div class="bar">
+        <span class="bar-btc" style="width: {{btc_pct}}%"></span>
+        <span class="bar-eth" style="width: {{eth_pct}}%"></span>
+      </div>
+      <div class="legend">
+        <span class="lhs"><span class="dot btc"></span>BTC/USD {{btc_pct}}% · {{btc_total}}</span>
+        <span class="rhs"><span class="dot eth"></span>ETH/USD {{eth_pct}}% · {{eth_total}}</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Pipeline</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="k">submitted</div>
+      <div class="v num">{{submitted}}</div>
+    </div>
+    <div class="card">
+      <div class="k">applied</div>
+      <div class="v num">{{applied}}</div>
+    </div>
+    <div class="card">
+      <div class="k">in flight</div>
+      <div class="v num">{{inflight}}</div>
+      <div class="sub">submitted − applied</div>
+    </div>
+    <div class="card">
+      <div class="k">channel depth</div>
+      <div class="v num">{{channel_depth}}</div>
+      <div class="sub">bypass queue</div>
+    </div>
+    <div class="card">
+      <div class="k">rejected</div>
+      <div class="v num">{{rejected}}</div>
+    </div>
+    <div class="card">
+      <div class="k">blocks</div>
+      <div class="v num">{{blocks}}</div>
+    </div>
+    <div class="card">
+      <div class="k">avg txs / block</div>
+      <div class="v num">{{block_avg}}</div>
+      <div class="sub">min {{block_min}} · max {{block_max}}</div>
+    </div>
+    <div class="card">
+      <div class="k">last block</div>
+      <div class="v num">{{block_last}}</div>
+      <div class="sub">txs</div>
+    </div>
+  </div>
+
+  <h2>Chain</h2>
+  <div class="grid grid-3">
+    <div class="card"><div class="k">chain id</div><div class="v">{{chain_id}}</div></div>
+    <div class="card"><div class="k">head height</div><div class="v num">{{head_height}}</div></div>
+    <div class="card"><div class="k">mempool</div><div class="v">{{mempool_status}}</div></div>
+    <div class="card">
+      <div class="k">pruning</div>
+      <div class="v"><span class="pill {{pruning_class}}">{{pruning_state}}</span></div>
+      <div class="sub">keep recent: {{pruning_keep}}</div>
+    </div>
+    <div class="card span-2"><div class="k">head hash</div><div class="v"><code>{{head_hash}}</code></div></div>
+    <div class="card"><div class="k">company</div><div class="v"><code>{{company_addr}}</code></div></div>
+    <div class="card span-4"><div class="k">state root</div><div class="v"><code>{{state_root}}</code></div></div>
+  </div>
+
+  <h2>Recent blocks</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>height</th>
+        <th>hash</th>
+        <th class="right">txs</th>
+        <th class="right">timestamp</th>
+        <th class="right">Δ</th>
+        <th>state root</th>
+      </tr>
+    </thead>
+    <tbody>{{blocks_rows}}</tbody>
+  </table>
+
+  <h2>Perps</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>market</th>
+        <th>underlying</th>
+        <th class="right">mark px_q8</th>
+        <th class="right">oracle px_q8</th>
+        <th class="right">last px_q8</th>
+        <th class="right">funding rate (q9)</th>
+        <th class="right">open interest</th>
+        <th class="right">best bid</th>
+        <th class="right">best ask</th>
+        <th>paused</th>
+        <th>reduce-only halt</th>
+      </tr>
+    </thead>
+    <tbody>{{perps_rows}}</tbody>
+  </table>
+
+  <h2>Funding</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>market</th>
+        <th class="right">rate (q9)</th>
+        <th class="right">last tick</th>
+        <th class="right">next tick</th>
+        <th class="right">cap (q9)</th>
+      </tr>
+    </thead>
+    <tbody>{{funding_rows}}</tbody>
+  </table>
+
+  <h2>Top positions</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>owner</th>
+        <th>market</th>
+        <th>side</th>
+        <th class="right">qty</th>
+        <th class="right">entry px_q8</th>
+        <th class="right">mark px_q8</th>
+        <th class="right">unrealized PnL</th>
+        <th class="right">IM utilization</th>
+      </tr>
+    </thead>
+    <tbody>{{positions_rows}}</tbody>
+  </table>
+
+  <h2>Oracle</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>market</th>
+        <th class="right">px_q8</th>
+        <th class="right">source height</th>
+        <th class="right">blocks since</th>
+        <th>state</th>
+      </tr>
+    </thead>
+    <tbody>{{oracle_rows}}</tbody>
+  </table>
+
+  <h2>Liquidations</h2>
+  <table>
+    <thead>
+      <tr>
+        <th class="right">height</th>
+        <th class="right">seq</th>
+        <th>owner</th>
+        <th>market</th>
+        <th>triggered by</th>
+        <th class="right">mark @ trigger (q8)</th>
+      </tr>
+    </thead>
+    <tbody>{{liquidations_rows}}</tbody>
+  </table>
+
+  <h2>Insurance fund</h2>
+  <div class="grid">
+    {{insurance_panel}}
+  </div>
+
+  <div class="footer">refreshes every 2s · /api/status returns the same data as JSON</div>
+</body>
+</html>
